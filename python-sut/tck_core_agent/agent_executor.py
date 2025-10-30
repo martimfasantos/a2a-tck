@@ -3,18 +3,19 @@ from typing_extensions import override
 
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
+from a2a.server.tasks import TaskUpdater
 from a2a.types import (
-    TaskArtifactUpdateEvent,
+    TextPart,
     TaskState,
     TaskStatus,
     TaskStatusUpdateEvent,
 )
-from a2a.utils import new_agent_text_message, new_task, new_text_artifact
+from a2a.utils import new_task
 from a2a.utils.errors import ServerError
 from a2a.types import TaskNotFoundError, TaskNotCancelableError
 
 
-class TckCoreAgent:
+class TCKCoreAgent:
     """TCK Core Agent that properly supports A2A task workflow."""
 
     async def invoke(self, query: str) -> str:
@@ -34,11 +35,11 @@ class TckCoreAgent:
             return f"Hello World! You said: '{query}'. Thanks for your message!"
 
 
-class TckCoreAgentExecutor(AgentExecutor):
+class TCKCoreAgentExecutor(AgentExecutor):
     """Complete AgentExecutor Implementation that properly supports A2A tasks."""
 
     def __init__(self):
-        self.agent = TckCoreAgent()
+        self.agent = TCKCoreAgent()
         self._running_tasks = set()  # Track running tasks
 
     @override
@@ -63,19 +64,19 @@ class TckCoreAgentExecutor(AgentExecutor):
         if task.status and task.status.state in [TaskState.completed, TaskState.canceled]:
             # For completed/canceled tasks, just return without doing anything
             return
+        
+        task_updater = TaskUpdater(event_queue, task.id, task.context_id)
+
+        await task_updater.start_work()
 
         # Add task to running tasks
         self._running_tasks.add(task.id)
 
         try:
             # Update task status to submitted first
-            await event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(state=TaskState.submitted),
-                    final=False,
-                    contextId=task.contextId,
-                    taskId=task.id,
-                )
+            await task_updater.update_status(
+                state=TaskState.working,
+                final=False,
             )
 
             # Short delay to allow tests to see submitted state
@@ -86,13 +87,9 @@ class TckCoreAgentExecutor(AgentExecutor):
                 return  # Task was canceled
 
             # Update task status to working
-            await event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(state=TaskState.working),
-                    final=False,
-                    contextId=task.contextId,
-                    taskId=task.id,
-                )
+            await task_updater.update_status(
+                state=TaskState.working,
+                final=False,
             )
 
             # Short delay to allow tests to see working state
@@ -111,55 +108,22 @@ class TckCoreAgentExecutor(AgentExecutor):
                 return  # Task was canceled
 
             # Create an artifact with the result
-            await event_queue.enqueue_event(
-                TaskArtifactUpdateEvent(
-                    append=False,
-                    contextId=task.contextId,
-                    taskId=task.id,
-                    lastChunk=True,
-                    artifact=new_text_artifact(
-                        name="response",
-                        description="Agent response to user message.",
-                        text=result,
-                    ),
-                )
+            await task_updater.add_artifact(
+                append=False,
+                name="response",
+                parts=[
+                    TextPart(text=result)
+                ],
+                last_chunk=True,
             )
 
             # Mark task as completed
-            await event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(
-                        state=TaskState.completed,
-                        message=new_agent_text_message(
-                            result,
-                            task.contextId,
-                            task.id,
-                        ),
-                    ),
-                    final=True,
-                    contextId=task.contextId,
-                    taskId=task.id,
-                )
-            )
+            await task_updater.complete(result)
 
         except Exception as e:
             # Handle errors by marking task as failed
             error_message = f"Error processing request: {str(e)}"
-            await event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(
-                        state=TaskState.failed,
-                        message=new_agent_text_message(
-                            error_message,
-                            task.contextId,
-                            task.id,
-                        ),
-                    ),
-                    final=True,
-                    contextId=task.contextId,
-                    taskId=task.id,
-                )
-            )
+            await task_updater.failed(error_message)
         finally:
             # Remove task from running tasks
             self._running_tasks.discard(task.id)
@@ -186,7 +150,7 @@ class TckCoreAgentExecutor(AgentExecutor):
             TaskStatusUpdateEvent(
                 status=TaskStatus(state=TaskState.canceled),
                 final=True,
-                contextId=task.contextId,
-                taskId=task.id,
+                context_id=task.context_id,
+                task_id=task.id,
             )
         )

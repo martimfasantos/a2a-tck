@@ -1,5 +1,5 @@
 from agent_executor import (
-    TckCoreAgentExecutor,  # type: ignore[import-untyped]
+    TCKCoreAgentExecutor,  # type: ignore[import-untyped]
 )
 
 from a2a.server.apps import A2AStarletteApplication
@@ -65,7 +65,7 @@ def main() -> None:
 
     # Create task store and agent executor
     task_store = InMemoryTaskStore()
-    agent_executor = TckCoreAgentExecutor()
+    agent_executor = TCKCoreAgentExecutor()
 
     # Create the application using standard SDK class (no authentication enforcement)
     # Note: SDK doesn't provide built-in authentication middleware
