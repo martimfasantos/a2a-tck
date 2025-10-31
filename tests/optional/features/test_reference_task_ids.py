@@ -22,13 +22,13 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
     Tests optional implementation that enhances user experience
     but is not required for A2A compliance.
 
-    Test validates handling of valid referencetask_ids in messages.
+    Test validates handling of valid referenceTaskIds in messages.
 
     Failure Impact: Limits feature completeness (perfectly acceptable)
-    Fix Suggestion: Implement referencetask_ids support to enable task relationships
+    Fix Suggestion: Implement referenceTaskIds support to enable task relationships
 
     Asserts:
-        - Valid referencetask_ids are processed without error
+        - Valid referenceTaskIds are processed without error
         - Response format is valid regardless of feature support
         - Task references are handled appropriately by implementation
     """
@@ -46,7 +46,7 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
         "message": {
             "kind": "message",
             "parts": [{"kind": "text", "text": "This message references another task"}],
-            "referencetask_ids": [reference_task_id],
+            "referenceTaskIds": [reference_task_id],
         }
     }
 
@@ -55,7 +55,7 @@ def test_reference_task_ids_valid(sut_client, text_message_params):
     # The SUT might handle this in different ways:
     # 1. Accept it and use the reference (success)
     # 2. Ignore the reference but still process the message (success)
-    # 3. Reject it if referencetask_ids are not supported (error)
+    # 3. Reject it if referenceTaskIds are not supported (error)
 
     # We'll just check for a valid response, since behavior is implementation-specific
     # Both success and error responses are acceptable for this optional feature
@@ -70,13 +70,13 @@ def test_reference_task_ids_invalid(sut_client):
     Tests optional implementation that enhances user experience
     but is not required for A2A compliance.
 
-    Test validates handling of invalid referencetask_ids in messages.
+    Test validates handling of invalid referenceTaskIds in messages.
 
     Failure Impact: Limits feature completeness (perfectly acceptable)
     Fix Suggestion: Implement proper validation and error handling for invalid task references
 
     Asserts:
-        - Invalid referencetask_ids are handled gracefully
+        - Invalid referenceTaskIds are handled gracefully
         - Error responses (if any) use appropriate error codes
         - Implementation behavior is consistent and predictable
     """
@@ -85,7 +85,7 @@ def test_reference_task_ids_invalid(sut_client):
         "message": {
             "kind": "message",
             "parts": [{"kind": "text", "text": "This message references a non-existent task"}],
-            "referencetask_ids": ["non-existent-task-id"],
+            "referenceTaskIds": ["non-existent-task-id"],
         }
     }
 

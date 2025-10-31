@@ -10,7 +10,10 @@ Specification Reference: A2A Protocol v0.3.0 §3.4 - Transport Configuration
 
 import os
 from typing import Optional, Dict, List
-from tck.transport.base_client import TransportType
+from a2a.types import TransportProtocol
+
+# Backward compatibility alias
+TransportType = TransportProtocol
 
 # These will be set by pytest via conftest.py
 _sut_url: Optional[str] = None

@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import patch
 
 import tck.config as config
-from tck.transport.base_client import TransportType
+from tck.transport import TransportType
 
 
 @pytest.mark.core

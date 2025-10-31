@@ -22,7 +22,7 @@ def valid_text_message_params():
     return {
         "message": {
             "kind": "message",
-            "message_id": generate_test_message_id("text"),
+            "messageId": generate_test_message_id("text"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Hello from TCK!"}],
         }
@@ -36,7 +36,7 @@ def valid_file_message_params():
     return {
         "message": {
             "kind": "message",
-            "message_id": generate_test_message_id("file"),
+            "messageId": generate_test_message_id("file"),
             "role": "user",
             "parts": [
                 {
@@ -59,7 +59,7 @@ def valid_data_message_params():
     return {
         "message": {
             "kind": "message",
-            "message_id": generate_test_message_id("data"),
+            "messageId": generate_test_message_id("data"),
             "role": "user",
             "parts": [{"kind": "data", "data": {"key": "value", "number": 123, "nested": {"array": [1, 2, 3]}}}],
         }
@@ -132,7 +132,7 @@ def test_message_send_invalid_params(sut_client):
 
     Specification Reference: A2A v0.3.0 §8.1 - Standard JSON-RPC Errors
     """
-    invalid_params = {"message": {"kind": "message"}}  # missing required fields (message_id, role, parts)
+    invalid_params = {"message": {"kind": "message"}}  # missing required fields (messageId, role, parts)
 
     # Use transport-agnostic message sending (should fail)
     resp = transport_send_message(sut_client, invalid_params)
@@ -152,7 +152,7 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
     MANDATORY: A2A v0.3.0 §7.1 - Task Continuation
 
     The A2A v0.3.0 specification requires support for continuing existing tasks
-    via message/send with task_id parameter. This test works across all transport types.
+    via message/send with taskId parameter. This test works across all transport types.
 
     Failure Impact: Implementation is not A2A v0.3.0 compliant
 
@@ -172,8 +172,8 @@ def test_message_send_continue_task(sut_client, valid_text_message_params):
     continuation_params = {
         "message": {
             "kind": "message",
-            "task_id": task_id,
-            "message_id": generate_test_message_id("continuation"),
+            "taskId": task_id,
+            "messageId": generate_test_message_id("continuation"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Follow-up message for the existing task"}],
         }

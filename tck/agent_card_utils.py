@@ -7,28 +7,28 @@ Includes support for multi-transport discovery and enhanced security schemes.
 
 Specification Reference: A2A Protocol v0.3.0 §5 - Agent Discovery
 """
-
-import json
+import httpx
 import logging
-from a2a.client import (
-    A2ACardResolver,
-    Client,
-    ClientConfig,
-    ClientFactory,
-    create_text_message_object,
+from typing import Any, Dict, List, Optional, Set
+from a2a.client import A2ACardResolver
+from a2a.types import (
+    AgentCard, 
+    AgentCapabilities, 
+    AgentInterface, 
+    AgentSkill, 
+    TransportProtocol,
+    SecurityScheme,
 )
-from a2a.types import TransportProtocol
-from a2a.utils.message import get_message_text
-from typing import Any, Dict, List, Optional, Set, Union, cast
 
-import requests
-
-from tck.transport.base_client import TransportType
+from tck.sut_client import SUTClient
 
 logger = logging.getLogger(__name__)
 
 
-def fetch_agent_card(sut_base_url: str, session: requests.Session) -> Optional[Dict[str, Any]]:
+async def fetch_agent_card(
+    sut_base_url: str,
+    sut_client: SUTClient
+) -> Optional[AgentCard]:
     """
     Retrieve the Agent Card JSON from the SUT.
 
@@ -44,133 +44,109 @@ def fetch_agent_card(sut_base_url: str, session: requests.Session) -> Optional[D
 
     Specification Reference: A2A Protocol v0.3.0 §5.3 - Recommended Location
     """
-    # Parse the base URL to determine the host
-    parsed_url = urllib.parse.urlparse(sut_base_url)
-    base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
-
-    # Try v0.3.0 location first
-    agent_card_urls = [
-        ("/.well-known/agent-card.json", "v0.3.0"),
-        ("/.well-known/agent.json", "v0.2.5"),  # Backward compatibility
-    ]
-
-    for url_path, version in agent_card_urls:
+    async with httpx.AsyncClient() as httpx_client:
+        resolver = A2ACardResolver(
+            httpx_client=httpx_client,
+            base_url=sut_base_url,
+        )
+        
         try:
-            agent_card_url = urllib.parse.urljoin(base_domain, url_path)
-            logger.info(f"Fetching Agent Card from {agent_card_url} ({version} location)")
+            agent_card = await resolver.get_agent_card()
+            return agent_card
+        except Exception as e:
+            logger.error(f"Failed to fetch Agent Card: {e}")
+            return None
 
-            response = session.get(agent_card_url, timeout=10)
-            response.raise_for_status()
-
-            try:
-                agent_card = cast(Dict[str, Any], response.json())
-                logger.info(f"Successfully retrieved Agent Card from {version} location: {json.dumps(agent_card)[:200]}...")
-                return agent_card
-            except ValueError as e:
-                logger.error(f"Failed to parse Agent Card JSON from {agent_card_url}: {e}")
-                continue  # Try next location
-
-        except requests.RequestException as e:
-            logger.info(f"Agent Card not found at {version} location ({url_path}): {e}")
-            continue  # Try next location
-
-    logger.error("Failed to fetch Agent Card from any known location")
-    return None
-
-
-def get_sut_rpc_endpoint(agent_card_data: Dict[str, Any]) -> Optional[str]:
+def get_sut_rpc_endpoint(agent_card: AgentCard) -> Optional[str]:
     """
     Extract the SUT's JSON-RPC endpoint URL from the Agent Card.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card
 
     Returns:
         The JSON-RPC endpoint URL, or None if not found
     """
     # The endpoint might be directly in the root of the Agent Card
-    if "endpoint" in agent_card_data:
-        return cast(str, agent_card_data["endpoint"])
-
-    # It might also be in a jsonrpc section or similar
-    if "jsonrpc" in agent_card_data and "endpoint" in agent_card_data["jsonrpc"]:
-        return cast(str, agent_card_data["jsonrpc"]["endpoint"])
+    if agent_card.url and agent_card.preferred_transport == "JSONRPC":
+        return agent_card.url
+    
+    # Check additional interfaces for JSON-RPC endpoint
+    if agent_card.preferred_transport != "JSONRPC":
+        for interface in agent_card.additional_interfaces or []:
+            if interface.transport == "JSONRPC":
+                return interface.url
 
     # If we can't find it, return None
     logger.warning("Could not find JSON-RPC endpoint in Agent Card")
     return None
 
 
-def get_capability_streaming(agent_card_data: Dict[str, Any]) -> bool:
+def get_capability_streaming(agent_card: AgentCard) -> bool:
     """
     Check if the SUT supports streaming capabilities.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card
 
     Returns:
         True if streaming is supported, False otherwise
     """
-    if "capabilities" in agent_card_data:
-        capabilities = agent_card_data["capabilities"]
-        if isinstance(capabilities, dict) and "streaming" in capabilities:
-            return bool(capabilities["streaming"])
+    if agent_card.capabilities and isinstance(agent_card.capabilities, AgentCapabilities):
+        return bool(agent_card.capabilities.streaming)
 
     # Default to False if not specified
     return False
 
 
-def get_capability_push_notifications(agent_card_data: Dict[str, Any]) -> bool:
+def get_capability_push_notifications(agent_card: AgentCard) -> bool:
     """
     Check if the SUT supports push notifications.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card data
 
     Returns:
         True if push notifications are supported, False otherwise
     """
-    if "capabilities" in agent_card_data:
-        capabilities = agent_card_data["capabilities"]
-        if isinstance(capabilities, dict) and "pushNotifications" in capabilities:
-            return bool(capabilities["pushNotifications"])
+    if agent_card.capabilities and isinstance(agent_card.capabilities, AgentCapabilities):
+        return bool(agent_card.capabilities.push_notifications)
 
     # Default to False if not specified
     return False
 
 
-def get_supported_modalities(agent_card_data: Dict[str, Any], skill_id: Optional[str] = None) -> List[str]:
+def get_supported_modalities(agent_card: AgentCard, skill_id: Optional[str] = None) -> List[str]:
     """
     Get the supported modalities (input/output modes) from the Agent Card.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card data
         skill_id: Optional skill ID to get modalities for a specific skill
 
     Returns:
         A list of supported modality strings (e.g., ["text", "file", "data"])
     """
     modalities: Set[str] = set()
+    
+    if agent_card.skills and isinstance(agent_card.skills, list[AgentSkill]):
+        skills = agent_card.skills
 
-    # Check capabilities.skills section for inputOutputModes
-    if "capabilities" in agent_card_data and "skills" in agent_card_data["capabilities"]:
-        skills = agent_card_data["capabilities"]["skills"]
-
-        if isinstance(skills, list):
-            for skill in skills:
+        for skill in skills:
+            if isinstance(skill, AgentSkill):
                 # Skip if we're looking for a specific skill and this isn't it
-                if skill_id and skill.get("id") != skill_id:
+                if skill_id and skill.id != skill_id:
                     continue
 
-                if "inputOutputModes" in skill:
-                    io_modes = skill["inputOutputModes"]
+                if skill.input_modes:
+                    io_modes = skill.input_modes
                     if isinstance(io_modes, list):
                         modalities.update(mode for mode in io_modes if isinstance(mode, str))
 
     return list(modalities)
 
 
-def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+def get_authentication_schemes(agent_card: AgentCard) -> List[AgentCard]:
     """
     Get the authentication schemes declared in the Agent Card.
 
@@ -178,23 +154,22 @@ def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str
     using OpenAPI 3.x Security Scheme objects in the 'securitySchemes' field.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card
 
     Returns:
         A list of authentication scheme objects from securitySchemes
     """
     # Look for securitySchemes as per A2A/OpenAPI specification
-    if "securitySchemes" in agent_card_data:
-        schemes = agent_card_data["securitySchemes"]
-        if isinstance(schemes, dict):
-            # Convert dict of schemes to list of scheme objects
-            return list(schemes.values())
+    if (
+        agent_card.security_schemes and
+        isinstance(agent_card.security_schemes, dict[str, SecurityScheme])
+    ):
+        return list(agent_card.security_schemes.values())
 
     # Fallback: check for legacy 'authentication' field for backward compatibility
-    if "authentication" in agent_card_data:
-        auth = agent_card_data["authentication"]
-        if isinstance(auth, list):
-            return auth
+    if agent_card.authentication:
+        if isinstance(agent_card.authentication, list):
+            return agent_card.authentication
 
     # Return empty list if no authentication is declared
     return []
@@ -202,36 +177,35 @@ def get_authentication_schemes(agent_card_data: Dict[str, Any]) -> List[Dict[str
 
 # A2A v0.3.0 Transport Discovery Functions
 
-
-def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportType]:
+def get_supported_transports(agent_card: AgentCard) -> List[TransportProtocol]:
     """
     Discover supported transport protocols from the Agent Card.
 
     Extracts transport information from preferredTransport and additionalInterfaces fields.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card data
 
     Returns:
-        List of supported TransportType enums
+        List of supported TransportProtocol enums
 
     Specification Reference: A2A Protocol v0.3.0 §3.4.2 - Transport Selection and Negotiation
     """
-    supported_transports: Set[TransportType] = set()
+    supported_transports: Set[TransportProtocol] = set()
 
     # Check preferred transport
-    preferred = agent_card_data.get("preferredTransport")
+    preferred = agent_card.preferred_transport
     if preferred and isinstance(preferred, str):
         transport_type = _parse_transport_type(preferred)
         if transport_type:
             supported_transports.add(transport_type)
 
     # Check additional interfaces
-    additional = agent_card_data.get("additionalInterfaces", [])
+    additional = agent_card.additional_interfaces
     if isinstance(additional, list):
         for interface in additional:
-            if isinstance(interface, dict):
-                transport_name = interface.get("transport") or interface.get("type")
+            if isinstance(interface, AgentInterface):
+                transport_name = interface.transport
                 if transport_name and isinstance(transport_name, str):
                     transport_type = _parse_transport_type(transport_name)
                     if transport_type:
@@ -240,76 +214,73 @@ def get_supported_transports(agent_card_data: Dict[str, Any]) -> List[TransportT
     return list(supported_transports)
 
 
-def get_preferred_transport(agent_card_data: Dict[str, Any]) -> Optional[TransportType]:
+def get_preferred_transport(agent_card: AgentCard) -> Optional[TransportProtocol]:
     """
     Get the preferred transport protocol from the Agent Card.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card
 
     Returns:
-        The preferred TransportType, or None if not specified
+        The preferred TransportProtocol, or None if not specified
 
     Specification Reference: A2A Protocol v0.3.0 §3.4.2 - Transport Selection and Negotiation
     """
-    preferred = agent_card_data.get("preferredTransport")
+    preferred = agent_card.preferred_transport
     if preferred and isinstance(preferred, str):
         return _parse_transport_type(preferred)
     return None
 
 
-def get_transport_endpoints(agent_card_data: Dict[str, Any]) -> Dict[TransportType, str]:
+def get_transport_urls(agent_card: AgentCard) -> Dict[TransportProtocol, str]:
     """
     Extract transport-specific endpoints from the Agent Card.
 
     Maps each supported transport to its corresponding endpoint URL.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card data
 
     Returns:
-        Dictionary mapping TransportType to endpoint URL
+        Dictionary mapping TransportProtocol to endpoint URL
 
     Specification Reference: A2A Protocol v0.3.0 §3.1 - Transport Layer Requirements
     """
-    endpoints: Dict[TransportType, str] = {}
+    urls: Dict[TransportProtocol, str] = {}
 
     # Check for main endpoint (usually JSON-RPC)
-    main_endpoint = agent_card_data.get("endpoint")
-    if main_endpoint and isinstance(main_endpoint, str):
-        # Assume main endpoint is JSON-RPC unless specified otherwise
-        endpoints[TransportType.JSON_RPC] = main_endpoint
-    else:
-        # Fallback: check main "url" field and map to preferred transport
-        main_url = agent_card_data.get("url")
-        preferred_transport = agent_card_data.get("preferredTransport")
-        if main_url and isinstance(main_url, str) and preferred_transport and isinstance(preferred_transport, str):
-            transport_type = _parse_transport_type(preferred_transport)
-            if transport_type:
-                endpoints[transport_type] = main_url
-
-    # Check additional interfaces for transport-specific endpoints
-    additional = agent_card_data.get("additionalInterfaces", [])
-    if isinstance(additional, list):
-        for interface in additional:
-            if isinstance(interface, dict):
-                transport_name = interface.get("transport") or interface.get("type")
-                endpoint = interface.get("endpoint") or interface.get("url")
-
-                if transport_name and endpoint and isinstance(transport_name, str) and isinstance(endpoint, str):
+    main_url = agent_card.url
+    if main_url and isinstance(main_url, str):
+        transport_type = _parse_transport_type(agent_card.preferred_transport or "")
+        if transport_type:
+            urls[transport_type] = main_url
+        else:
+            # Default to JSON-RPC if no preferred transport specified
+            urls[TransportProtocol.jsonrpc] = main_url
+        
+    # Check additional interfaces for transport-specific urls
+    if (
+        agent_card.additional_interfaces and
+        isinstance(agent_card.additional_interfaces, list[AgentInterface])
+    ):
+        for interface in agent_card.additional_interfaces:
+            if isinstance(interface, AgentInterface):
+                transport_name = interface.transport
+                url = interface.url
+                if transport_name and url and isinstance(transport_name, str) and isinstance(url, str):
                     transport_type = _parse_transport_type(transport_name)
                     if transport_type:
-                        endpoints[transport_type] = endpoint
+                        urls[transport_type] = url
 
-    return endpoints
+    return urls
 
 
-def get_transport_interface_info(agent_card_data: Dict[str, Any], transport_type: TransportType) -> Optional[Dict[str, Any]]:
+def get_transport_interface_info(agent_card: AgentCard, transport_type: TransportProtocol) -> Optional[Dict[str, Any]]:
     """
     Get detailed interface information for a specific transport.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card
         transport_type: The transport type to get information for
 
     Returns:
@@ -318,27 +289,29 @@ def get_transport_interface_info(agent_card_data: Dict[str, Any], transport_type
     Specification Reference: A2A Protocol v0.3.0 §3.2 - Supported Transport Protocols
     """
     # Check if this is the preferred transport with main endpoint
-    preferred = get_preferred_transport(agent_card_data)
+    preferred = get_preferred_transport(agent_card)
     if preferred == transport_type:
-        endpoint = agent_card_data.get("endpoint")
-        if endpoint:
-            return {"transport": transport_type.value, "endpoint": endpoint, "preferred": True}
+        url = agent_card.url
+        if url:
+            return {"transport": transport_type.value, "url": url, "preferred": True}
 
     # Check additional interfaces
-    additional = agent_card_data.get("additionalInterfaces", [])
-    if isinstance(additional, list):
-        for interface in additional:
-            if isinstance(interface, dict):
-                transport_name = interface.get("transport") or interface.get("type")
+    if (
+        agent_card.additional_interfaces and
+        isinstance(agent_card.additional_interfaces, list[AgentInterface])
+    ):
+        for interface in agent_card.additional_interfaces:
+            if isinstance(interface, AgentInterface):
+                transport_name = interface.transport
                 if transport_name and _parse_transport_type(transport_name) == transport_type:
-                    return interface
+                    return {"transport": transport_type.value, "url": interface.url, "preferred": False}
 
     return None
 
 
-def _parse_transport_type(transport_name: str) -> Optional[TransportType]:
+def _parse_transport_type(transport_name: str) -> Optional[TransportProtocol]:
     """
-    Parse a transport name string to TransportType enum.
+    Parse a transport name string to TransportProtocol enum.
 
     Handles various naming conventions for transport types.
 
@@ -346,31 +319,31 @@ def _parse_transport_type(transport_name: str) -> Optional[TransportType]:
         transport_name: String representation of transport type
 
     Returns:
-        Corresponding TransportType enum or None if not recognized
+        Corresponding TransportProtocol enum or None if not recognized
     """
     normalized = transport_name.lower().strip()
 
     # JSON-RPC variants
     if normalized in ["jsonrpc", "json-rpc", "jsonrpc2.0", "json-rpc-2.0", "rpc"]:
-        return TransportType.JSON_RPC
+        return TransportProtocol.jsonrpc
 
     # gRPC variants
     if normalized in ["grpc", "grpc-web", "protobuf"]:
-        return TransportType.GRPC
+        return TransportProtocol.grpc
 
     # REST variants
     if normalized in ["rest", "http", "http+json", "restful", "http-json"]:
-        return TransportType.REST
+        return TransportProtocol.http_json
 
     return None
 
 
-def has_transport_support(agent_card_data: Dict[str, Any], transport_type: TransportType) -> bool:
+def has_transport_support(agent_card: AgentCard, transport_type: TransportProtocol) -> bool:
     """
     Check if the agent supports a specific transport type.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card data
         transport_type: The transport type to check for
 
     Returns:
@@ -378,18 +351,18 @@ def has_transport_support(agent_card_data: Dict[str, Any], transport_type: Trans
 
     Specification Reference: A2A Protocol v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
-    supported_transports = get_supported_transports(agent_card_data)
+    supported_transports = get_supported_transports(agent_card)
     return transport_type in supported_transports
 
 
-def validate_transport_consistency(agent_card_data: Dict[str, Any]) -> List[str]:
+def validate_transport_consistency(agent_card: AgentCard) -> List[str]:
     """
     Validate that transport declarations are consistent and complete.
 
     Checks for common issues in transport configuration.
 
     Args:
-        agent_card_data: The parsed Agent Card data
+        agent_card: The parsed Agent Card
 
     Returns:
         List of validation error messages (empty if valid)
@@ -399,23 +372,25 @@ def validate_transport_consistency(agent_card_data: Dict[str, Any]) -> List[str]
     errors: List[str] = []
 
     # Check that at least one transport is declared
-    supported_transports = get_supported_transports(agent_card_data)
+    supported_transports = get_supported_transports(agent_card)
     if not supported_transports:
         errors.append("No supported transports declared in Agent Card")
         return errors  # Can't validate further without transports
 
-    # Check that all declared transports have endpoints
-    endpoints = get_transport_endpoints(agent_card_data)
+    # Check that all declared transports have urls
+    urls = get_transport_urls(agent_card)
     for transport in supported_transports:
-        if transport not in endpoints:
-            errors.append(f"Transport {transport.value} declared but no endpoint provided")
+        if transport not in urls:
+            errors.append(f"Transport {transport.value} declared but no url provided")
 
-    # Check for orphaned endpoints (endpoints without transport declarations)
-    additional = agent_card_data.get("additionalInterfaces", [])
-    if isinstance(additional, list):
-        for interface in additional:
-            if isinstance(interface, dict):
-                transport_name = interface.get("transport") or interface.get("type")
+    # Check for orphaned urls (urls without transport declarations)
+    if (
+        agent_card.additional_interfaces and
+        isinstance(agent_card.additional_interfaces, list)
+    ):
+        for interface in agent_card.additional_interfaces:
+            if isinstance(interface, AgentInterface):
+                transport_name = interface.transport
                 if transport_name:
                     transport_type = _parse_transport_type(transport_name)
                     if not transport_type:

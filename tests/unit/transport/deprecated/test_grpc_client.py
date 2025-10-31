@@ -14,7 +14,7 @@ import asyncio
 from typing import Dict, Any
 
 from tck.transport.grpc_client import GRPCClient
-from tck.transport import TransportType, TransportError
+from tck.transport.base_client import TransportProtocol, TransportError
 
 
 @pytest.mark.core
@@ -24,7 +24,7 @@ class TestGRPCClientInitialization:
     def test_init_with_grpc_url(self):
         """Test initialization with grpc:// URL."""
         client = GRPCClient("grpc://example.com:9000")
-        assert client.transport_type == TransportType.GRPC
+        assert client.transport_type == TransportProtocol.GRPC
         assert client.grpc_target == "example.com:9000"
         assert not client.use_tls
         assert client.timeout == 30.0
@@ -32,7 +32,7 @@ class TestGRPCClientInitialization:
     def test_init_with_grpcs_url(self):
         """Test initialization with grpcs:// URL (TLS)."""
         client = GRPCClient("grpcs://example.com:9000")
-        assert client.transport_type == TransportType.GRPC
+        assert client.transport_type == TransportProtocol.GRPC
         assert client.grpc_target == "example.com:9000"
         assert client.use_tls
 
@@ -82,7 +82,7 @@ class TestGRPCClientInterface:
     def test_transport_type_is_grpc(self):
         """Test transport type is correctly set to GRPC."""
         client = GRPCClient("grpc://example.com:9000")
-        assert client.transport_type == TransportType.GRPC
+        assert client.transport_type == TransportProtocol.GRPC
 
     def test_supports_streaming(self):
         """Test gRPC client reports streaming support."""
@@ -504,7 +504,7 @@ def test_grpc_client_interface_compatibility():
     assert isinstance(client, BaseTransportClient)
 
     # Should have correct transport type
-    assert client.transport_type == TransportType.GRPC
+    assert client.transport_type == TransportProtocol.GRPC
 
     # Should implement all required methods
     required_methods = [
@@ -533,7 +533,7 @@ def test_grpc_client_configuration_options():
     ]
 
     for client in clients:
-        assert client.transport_type == TransportType.GRPC
+        assert client.transport_type == TransportProtocol.GRPC
         assert client.grpc_target
         assert isinstance(client.use_tls, bool)
         assert client.timeout > 0

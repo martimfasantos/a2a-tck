@@ -660,11 +660,8 @@ def calculate_success_rate(results: Dict) -> float:
 def get_agent_card_data(sut_url: str) -> Dict:
     """Get agent card data from the SUT."""
     try:
-        from tck.sut_client import SUTClient
         from tck.agent_card_utils import fetch_agent_card
-
-        sut_client = SUTClient(sut_url)
-        return fetch_agent_card(sut_url, sut_client.session) or {}
+        return fetch_agent_card(sut_url) or {}
     except Exception as e:
         print(f"Warning: Could not fetch agent card: {e}")
 

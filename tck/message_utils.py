@@ -1,6 +1,6 @@
 import uuid
 import json
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 
 def generate_request_id() -> str:
@@ -56,7 +56,7 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
     A2A JSON format:
     {
         "kind": "message",
-        "message_id": "...",
+        "messageId": "...",
         "role": "user",
         "parts": [{"kind": "text", "text": "..."}]
     }
@@ -70,17 +70,17 @@ def convert_a2a_message_to_protobuf_json(message: Dict[str, Any]) -> Dict[str, A
     """
     protobuf_message = {}
 
-    # Map message_id -> message_id
-    if "message_id" in message:
-        protobuf_message["message_id"] = message["message_id"]
+    # Map messageId -> message_id
+    if "messageId" in message:
+        protobuf_message["message_id"] = message["messageId"]
 
-    # Map context_id -> context_id
-    if "context_id" in message:
-        protobuf_message["context_id"] = message["context_id"]
+    # Map contextId -> context_id
+    if "contextId" in message:
+        protobuf_message["context_id"] = message["contextId"]
 
-    # Map task_id -> task_id
-    if "task_id" in message:
-        protobuf_message["task_id"] = message["task_id"]
+    # Map taskId -> task_id
+    if "taskId" in message:
+        protobuf_message["task_id"] = message["taskId"]
 
     # Map role to protobuf enum format
     if "role" in message:
@@ -148,9 +148,9 @@ def convert_protobuf_response_to_a2a_json(response: Dict[str, Any]) -> Dict[str,
     {
         "result": {
             "id": "...",
-            "context_id": "...",
+            "contextId": "...",
             "status": {...},
-            "history": [{"message_id": "...", "role": "user", "parts": [...], "kind": "message"}],
+            "history": [{"messageId": "...", "role": "user", "parts": [...], "kind": "message"}],
             "kind": "task"
         }
     }
@@ -183,7 +183,7 @@ def convert_protobuf_task_to_a2a(task: Dict[str, Any]) -> Dict[str, Any]:
     if "id" in task:
         a2a_task["id"] = task["id"]
     if "context_id" in task:
-        a2a_task["context_id"] = task["context_id"]
+        a2a_task["contextId"] = task["context_id"]
     if "status" in task:
         # Convert protobuf status to A2A status format
         status = task["status"]
@@ -228,11 +228,11 @@ def convert_protobuf_message_to_a2a(message: Dict[str, Any]) -> Dict[str, Any]:
 
     # Map basic fields
     if "message_id" in message:
-        a2a_message["message_id"] = message["message_id"]
+        a2a_message["messageId"] = message["message_id"]
     if "context_id" in message:
-        a2a_message["context_id"] = message["context_id"]
+        a2a_message["contextId"] = message["context_id"]
     if "task_id" in message:
-        a2a_message["task_id"] = message["task_id"]
+        a2a_message["taskId"] = message["task_id"]
     if "metadata" in message:
         a2a_message["metadata"] = message["metadata"]
     if "extensions" in message:

@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch
 from typing import Dict, Any
 
 from tck.transport.jsonrpc_client import JSONRPCClient, JSONRPCError
-from tck.transport import TransportType
+from tck.transport.base_client import TransportProtocol
 
 
 @pytest.mark.core
@@ -31,7 +31,7 @@ class TestJSONRPCClient:
         client = JSONRPCClient("https://example.com/jsonrpc", timeout=60.0, max_retries=5)
 
         assert client.base_url == "https://example.com/jsonrpc"
-        assert client.transport_type == TransportType.JSON_RPC
+        assert client.transport_type == TransportProtocol.jsonrpc
         assert client.timeout == 60.0
         assert client.max_retries == 5
         assert client.session is not None
@@ -77,8 +77,8 @@ class TestJSONRPCClient:
         # Mock successful response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.text = '{"jsonrpc": "2.0", "result": {"taskId": "test-123"}, "id": "test-id"}'
-        mock_response.json.return_value = {"jsonrpc": "2.0", "result": {"taskId": "test-123"}, "id": "test-id"}
+        mock_response.text = '{"jsonrpc": "2.0", "result": {"task_id": "test-123"}, "id": "test-id"}'
+        mock_response.json.return_value = {"jsonrpc": "2.0", "result": {"task_id": "test-123"}, "id": "test-id"}
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
 
@@ -96,7 +96,7 @@ class TestJSONRPCClient:
         assert call_args[1]["headers"]["Content-Type"] == "application/json"
 
         # Verify result
-        assert result == {"jsonrpc": "2.0", "result": {"taskId": "test-123"}, "id": "test-id"}
+        assert result == {"jsonrpc": "2.0", "result": {"task_id": "test-123"}, "id": "test-id"}
 
     @patch("requests.Session.post")
     def test_make_jsonrpc_request_error_response(self, mock_post):
@@ -126,13 +126,13 @@ class TestJSONRPCClient:
         # Mock successful response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.text = '{"jsonrpc": "2.0", "result": {"taskId": "task-123"}, "id": "req-1"}'
-        mock_response.json.return_value = {"jsonrpc": "2.0", "result": {"taskId": "task-123"}, "id": "req-1"}
+        mock_response.text = '{"jsonrpc": "2.0", "result": {"task_id": "task-123"}, "id": "req-1"}'
+        mock_response.json.return_value = {"jsonrpc": "2.0", "result": {"task_id": "task-123"}, "id": "req-1"}
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
 
         # Test message
-        message = {"kind": "message", "messageId": "msg-123", "role": "user", "parts": [{"kind": "text", "text": "Hello"}]}
+        message = {"kind": "message", "message_id": "msg-123", "role": "user", "parts": [{"kind": "text", "text": "Hello"}]}
 
         result = self.client.send_message(message)
 
@@ -142,7 +142,7 @@ class TestJSONRPCClient:
         assert call_args[1]["json"]["params"] == {"message": message}
 
         # Verify result extraction
-        assert result == {"taskId": "task-123"}
+        assert result == {"task_id": "task-123"}
 
     @patch("requests.Session.post")
     def test_get_task_interface(self, mock_post):
@@ -225,7 +225,7 @@ class TestJSONRPCError:
 
         error = JSONRPCError("Test error message", original_error=original_error, json_rpc_error=json_error)
 
-        assert error.transport_type == TransportType.JSON_RPC
+        assert error.transport_type == TransportProtocol.jsonrpc
         assert error.original_error == original_error
         assert error.json_rpc_error == json_error
         assert "JSONRPC" in str(error)

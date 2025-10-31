@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any
 
 from tck.transport.transport_manager import TransportManager, TransportManagerError, TransportSelectionStrategy
-from tck.transport.base_client import TransportType, BaseTransportClient
+from tck.transport import TransportType, BaseTransportClient
 
 
 class MockTransportClient(BaseTransportClient):

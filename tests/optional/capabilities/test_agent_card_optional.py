@@ -18,12 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def sut_client():
-    """Fixture to provide a SUTClient instance."""
-    return SUTClient()
-
-
-@pytest.fixture(scope="module")
 def fetched_agent_card(sut_client, agent_card_data):
     """
     Fixture to reuse the global agent_card_data fixture or fetch it if not available.

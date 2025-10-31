@@ -6,6 +6,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from a2a.types import AgentCard
 import requests
 import responses
 
@@ -13,28 +14,36 @@ from tck import agent_card_utils
 from tests.markers import optional_feature
 
 # Sample valid Agent Card for testing
-SAMPLE_AGENT_CARD = {
-    "name": "Test Agent",
-    "description": "A test agent for TCK",
-    "id": "test-agent-id",
-    "protocolVersion": "1.0",
-    "url": "https://example.com/agent",
-    "endpoint": "https://example.com/agent/jsonrpc",
-    "capabilities": {
-        "streaming": True,
-        "pushNotifications": False,
-        "skills": [
-            {"id": "skill1", "name": "Test Skill 1", "description": "First test skill", "inputOutputModes": ["text", "file"]},
+SAMPLE_AGENT_CARD = AgentCard.model_validate(
+    {
+        "name": "Test Agent",
+        "description": "A test agent for TCK",
+        "id": "test-agent-id",
+        "protocolVersion": "1.0",
+        "url": "https://example.com/agent",
+        "preferred_transport": "JSONRPC",
+        "additional_interfaces": [
             {
-                "id": "skill2",
-                "name": "Test Skill 2",
-                "description": "Second test skill with data support",
-                "inputOutputModes": ["text", "data"],
-            },
+                "transport": "GRPC",
+                "url": "https://example.com/agent/grpc"
+            }
         ],
-    },
-    "authentication": [{"scheme": "bearer", "description": "Bearer token authentication"}],
-}
+        "capabilities": {
+            "streaming": True,
+            "pushNotifications": False,
+            "skills": [
+                {"id": "skill1", "name": "Test Skill 1", "description": "First test skill", "inputOutputModes": ["text", "file"]},
+                {
+                    "id": "skill2",
+                    "name": "Test Skill 2",
+                    "description": "Second test skill with data support",
+                    "inputOutputModes": ["text", "data"],
+                },
+            ],
+        },
+        "authentication": [{"scheme": "bearer", "description": "Bearer token authentication"}],
+    }
+)
 
 # Tests for fetch_agent_card
 

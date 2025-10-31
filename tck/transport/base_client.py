@@ -10,22 +10,11 @@ Specification Reference: A2A Protocol v0.3.0 §3.1 - Transport Layer Requirement
 
 import logging
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
+from a2a.types import TransportProtocol
+
 logger = logging.getLogger(__name__)
-
-
-class TransportType(Enum):
-    """
-    Enumeration of supported A2A transport protocols.
-
-    Specification Reference: A2A Protocol v0.3.0 §3.2 - Supported Transport Protocols
-    """
-
-    JSON_RPC = "jsonrpc"
-    GRPC = "grpc"
-    REST = "rest"
 
 
 class TransportError(Exception):
@@ -39,7 +28,7 @@ class TransportError(Exception):
     def __init__(
         self,
         message: str,
-        transport_type: TransportType,
+        transport_type: TransportProtocol,
         a2a_error: Optional[Dict[str, Any]] = None,
         original_error: Optional[Exception] = None,
     ):
@@ -65,7 +54,7 @@ class BaseTransportClient(ABC):
     Specification Reference: A2A Protocol v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
 
-    def __init__(self, base_url: str, transport_type: TransportType):
+    def __init__(self, base_url: str, transport_type: TransportProtocol):
         """
         Initialize the transport client.
 

@@ -13,16 +13,16 @@ from typing import Any, Dict, List, Optional, Set, Union
 
 import requests
 
+import asyncio
+from a2a.types import AgentCard, TransportProtocol
 from tck.agent_card_utils import (
     fetch_agent_card,
     get_supported_transports,
     get_preferred_transport,
-    get_transport_endpoints,
-    get_transport_interface_info,
-    has_transport_support,
+    get_transport_urls,
     validate_transport_consistency,
 )
-from tck.transport.base_client import BaseTransportClient, TransportType, TransportError
+from tck.transport.base_client import BaseTransportClient
 from tck import config as tck_config
 
 logger = logging.getLogger(__name__)
@@ -80,10 +80,10 @@ class TransportManager:
         self.selection_strategy = selection_strategy
 
         # Initialize internal state
-        self._agent_card: Optional[Dict[str, Any]] = None
-        self._supported_transports: List[TransportType] = []
-        self._transport_endpoints: Dict[TransportType, str] = {}
-        self._client_cache: Dict[TransportType, BaseTransportClient] = {}
+        self._agent_card: Optional[AgentCard] = None
+        self._supported_transports: List[TransportProtocol] = []
+        self._transport_endpoints: Dict[TransportProtocol, str] = {}
+        self._client_cache: Dict[TransportProtocol, BaseTransportClient] = {}
         self._discovery_completed = False
 
         logger.info(f"TransportManager initialized for {sut_base_url} with strategy: {selection_strategy}")
@@ -108,7 +108,7 @@ class TransportManager:
 
         try:
             # Fetch the Agent Card
-            self._agent_card = fetch_agent_card(self.sut_base_url, self.session)
+            self._agent_card = asyncio.run(fetch_agent_card(self.sut_base_url))
             if not self._agent_card:
                 raise TransportManagerError("Failed to fetch Agent Card from SUT")
 
@@ -120,7 +120,7 @@ class TransportManager:
 
             # Extract transport information
             discovered = get_supported_transports(self._agent_card)
-            endpoints = get_transport_endpoints(self._agent_card)
+            endpoints = get_transport_urls(self._agent_card)
 
             # Apply required transports restriction, if any
             required = tck_config.get_required_transports()
@@ -146,12 +146,12 @@ class TransportManager:
                 raise
             raise TransportManagerError(f"Transport discovery failed: {e}") from e
 
-    def get_supported_transports(self) -> List[TransportType]:
+    def get_supported_transports(self) -> List[TransportProtocol]:
         """
         Get list of supported transport types.
 
         Returns:
-            List of supported TransportType enums
+            List of supported TransportProtocol enums
 
         Raises:
             TransportManagerError: If discovery has not been completed
@@ -162,12 +162,12 @@ class TransportManager:
 
         return self._supported_transports.copy()
 
-    def get_preferred_transport(self) -> Optional[TransportType]:
+    def get_preferred_transport(self) -> Optional[TransportProtocol]:
         """
         Get the preferred transport type based on Agent Card.
 
         Returns:
-            Preferred TransportType or None if not specified
+            Preferred TransportProtocol or None if not specified
 
         Raises:
             TransportManagerError: If discovery has not been completed
@@ -181,7 +181,7 @@ class TransportManager:
 
         return get_preferred_transport(self._agent_card)
 
-    def supports_transport(self, transport_type: TransportType) -> bool:
+    def supports_transport(self, transport_type: TransportProtocol) -> bool:
         """
         Check if the SUT supports a specific transport type.
 
@@ -199,7 +199,7 @@ class TransportManager:
 
         return transport_type in self._supported_transports
 
-    def get_transport_client(self, transport_type: Optional[TransportType] = None) -> BaseTransportClient:
+    def get_transport_client(self, transport_type: Optional[TransportProtocol] = None) -> BaseTransportClient:
         """
         Get a transport client for the specified transport type.
 
@@ -237,14 +237,14 @@ class TransportManager:
 
         return client
 
-    def get_all_transport_clients(self) -> Dict[TransportType, BaseTransportClient]:
+    def get_all_transport_clients(self) -> Dict[TransportProtocol, BaseTransportClient]:
         """
         Get transport clients for all supported transports.
 
         Useful for multi-transport equivalence testing.
 
         Returns:
-            Dictionary mapping TransportType to client instances
+            Dictionary mapping TransportProtocol to client instances
 
         Raises:
             TransportManagerError: If any client creation fails
@@ -253,7 +253,7 @@ class TransportManager:
             if not self.discover_transports():
                 raise TransportManagerError("Cannot get clients: transport discovery failed")
 
-        clients: Dict[TransportType, BaseTransportClient] = {}
+        clients: Dict[TransportProtocol, BaseTransportClient] = {}
 
         for transport_type in self._supported_transports:
             try:
@@ -303,12 +303,12 @@ class TransportManager:
             "discovery_completed": self._discovery_completed,
         }
 
-    def _select_transport_by_strategy(self) -> Optional[TransportType]:
+    def _select_transport_by_strategy(self) -> Optional[TransportProtocol]:
         """
         Select a transport based on the configured selection strategy.
 
         Returns:
-            Selected TransportType or None if no suitable transport found
+            Selected TransportProtocol or None if no suitable transport found
         """
         if not self._supported_transports:
             return None
@@ -322,25 +322,25 @@ class TransportManager:
             return self._supported_transports[0]
 
         elif self.selection_strategy == TransportSelectionStrategy.PREFER_JSONRPC:
-            if TransportType.JSON_RPC in self._supported_transports:
-                return TransportType.JSON_RPC
+            if TransportProtocol.jsonrpc in self._supported_transports:
+                return TransportProtocol.jsonrpc
             return self._supported_transports[0]
 
         elif self.selection_strategy == TransportSelectionStrategy.PREFER_GRPC:
-            if TransportType.GRPC in self._supported_transports:
-                return TransportType.GRPC
+            if TransportProtocol.grpc in self._supported_transports:
+                return TransportProtocol.grpc
             return self._supported_transports[0]
 
         elif self.selection_strategy == TransportSelectionStrategy.PREFER_REST:
-            if TransportType.REST in self._supported_transports:
-                return TransportType.REST
+            if TransportProtocol.http_json in self._supported_transports:
+                return TransportProtocol.http_json
             return self._supported_transports[0]
 
         else:
             # Default: return first supported transport
             return self._supported_transports[0]
 
-    def _create_transport_client(self, transport_type: TransportType) -> BaseTransportClient:
+    def _create_transport_client(self, transport_type: TransportProtocol) -> BaseTransportClient:
         """
         Create a transport client for the specified transport type.
 
@@ -356,24 +356,27 @@ class TransportManager:
         if transport_type not in self._transport_endpoints:
             raise TransportManagerError(f"No endpoint configured for transport {transport_type.value}")
 
+        if not self._agent_card:
+            raise TransportManagerError("Agent card not available - discovery must be completed first")
+
         endpoint = self._transport_endpoints[transport_type]
 
         try:
             # Import transport clients dynamically to avoid circular imports
-            if transport_type == TransportType.JSON_RPC:
+            if transport_type == TransportProtocol.jsonrpc:
                 from tck.transport.jsonrpc_client import JSONRPCClient
 
-                return JSONRPCClient(endpoint)
+                return JSONRPCClient(self._agent_card, endpoint)
 
-            elif transport_type == TransportType.GRPC:
+            elif transport_type == TransportProtocol.grpc:
                 from tck.transport.grpc_client import GRPCClient
 
-                return GRPCClient(endpoint)
+                return GRPCClient(self._agent_card, endpoint)
 
-            elif transport_type == TransportType.REST:
+            elif transport_type == TransportProtocol.http_json:
                 from tck.transport.rest_client import RESTClient
 
-                return RESTClient(endpoint)
+                return RESTClient(self._agent_card, endpoint)
 
             else:
                 raise TransportManagerError(f"Unknown transport type: {transport_type}")

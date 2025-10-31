@@ -15,7 +15,7 @@ import json
 from typing import Dict, Any
 
 from tck.transport.rest_client import RESTClient
-from tck.transport import TransportType, TransportError
+from tck.transport.base_client import TransportProtocol, TransportError
 
 
 @pytest.mark.core
@@ -25,14 +25,14 @@ class TestRESTClientInitialization:
     def test_init_with_http_url(self):
         """Test initialization with HTTP URL."""
         client = RESTClient("http://example.com:8080")
-        assert client.transport_type == TransportType.REST
+        assert client.transport_type == TransportProtocol.REST
         assert client.base_url == "http://example.com:8080/"
         assert client.timeout == 30.0
 
     def test_init_with_https_url(self):
         """Test initialization with HTTPS URL."""
         client = RESTClient("https://example.com:8080")
-        assert client.transport_type == TransportType.REST
+        assert client.transport_type == TransportProtocol.REST
         assert client.base_url == "https://example.com:8080/"
 
     def test_init_with_trailing_slash(self):
@@ -76,7 +76,7 @@ class TestRESTClientInterface:
     def test_transport_type_is_rest(self):
         """Test transport type is correctly set to REST."""
         client = RESTClient("https://example.com:8080")
-        assert client.transport_type == TransportType.REST
+        assert client.transport_type == TransportProtocol.REST
 
     def test_supports_streaming(self):
         """Test REST client reports streaming support."""
@@ -899,7 +899,7 @@ def test_rest_client_interface_compatibility():
     assert isinstance(client, BaseTransportClient)
 
     # Should have correct transport type
-    assert client.transport_type == TransportType.REST
+    assert client.transport_type == TransportProtocol.REST
 
     # Should implement all required methods
     required_methods = [
@@ -933,7 +933,7 @@ def test_rest_client_configuration_options():
     ]
 
     for client in clients:
-        assert client.transport_type == TransportType.REST
+        assert client.transport_type == TransportProtocol.REST
         assert client.base_url.endswith("/")
         assert client.timeout > 0
         assert "Content-Type" in client.default_headers

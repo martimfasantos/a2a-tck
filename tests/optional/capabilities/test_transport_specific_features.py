@@ -53,7 +53,7 @@ class TestJSONRPCSpecificFeatures:
         for i in range(3):
             message = {
                 "kind": "message",
-                "message_id": generate_test_message_id(f"batch-{i}"),
+                "messageId": generate_test_message_id(f"batch-{i}"),
                 "role": "user",
                 "parts": [{"kind": "text", "text": f"Batch message {i}"}],
             }
@@ -117,7 +117,7 @@ class TestJSONRPCSpecificFeatures:
             "params": {
                 "message": {
                     "kind": "message",
-                    "message_id": generate_test_message_id("notification"),
+                    "messageId": generate_test_message_id("notification"),
                     "role": "user",
                     "parts": [{"kind": "text", "text": "Notification test"}],
                 }
@@ -394,7 +394,7 @@ class TestStreamingSpecificFeatures:
         # Create SSE request
         message = {
             "kind": "message",
-            "message_id": generate_test_message_id("sse-mgmt"),
+            "messageId": generate_test_message_id("sse-mgmt"),
             "role": "user",
             "parts": [{"kind": "text", "text": "SSE connection management test"}],
         }
@@ -455,7 +455,7 @@ class TestMultiModalFeatures:
         # Test file reference part
         file_message = {
             "kind": "message",
-            "message_id": generate_test_message_id("file-ref"),
+            "messageId": generate_test_message_id("file-ref"),
             "role": "user",
             "parts": [
                 {"kind": "text", "text": "Please analyze this file"},
@@ -496,7 +496,7 @@ class TestMultiModalFeatures:
 
         data_message = {
             "kind": "message",
-            "message_id": generate_test_message_id("binary-data"),
+            "messageId": generate_test_message_id("binary-data"),
             "role": "user",
             "parts": [
                 {"kind": "text", "text": "Processing binary data"},

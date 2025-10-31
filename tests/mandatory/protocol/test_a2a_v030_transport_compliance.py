@@ -18,7 +18,7 @@ from tests.validators.a2a_v030_compliance import (
     validate_a2a_v030_compliance,
 )
 from tests.markers import mandatory_protocol
-from tck.transport.base_client import TransportType
+from tck.transport import TransportType
 
 logger = logging.getLogger(__name__)
 

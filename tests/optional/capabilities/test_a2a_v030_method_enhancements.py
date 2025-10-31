@@ -50,7 +50,7 @@ class TestA2AV030MethodEnhancements:
         """
         enhanced_message = {
             "kind": "message",
-            "message_id": generate_test_message_id("enhanced-parts"),
+            "messageId": generate_test_message_id("enhanced-parts"),
             "role": "user",
             "parts": [
                 {"kind": "text", "text": "This message tests enhanced parts support in A2A v0.3.0"},
@@ -85,7 +85,7 @@ class TestA2AV030MethodEnhancements:
         # First create a task
         message = {
             "kind": "message",
-            "message_id": generate_test_message_id("enhanced-query"),
+            "messageId": generate_test_message_id("enhanced-query"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Task for enhanced query testing"}],
         }
@@ -186,7 +186,7 @@ class TestA2AV030MethodEnhancements:
         """
         test_cases = [
             {"method": "message/send", "invalid_params": {"invalid": "structure"}, "expected_error": "Invalid message structure"},
-            {"method": "tasks/get", "invalid_params": {"invalid": "task_id"}, "expected_error": "Invalid task ID"},
+            {"method": "tasks/get", "invalid_params": {"invalid": "taskId"}, "expected_error": "Invalid task ID"},
             {"method": "tasks/cancel", "invalid_params": {"invalid": "params"}, "expected_error": "Invalid parameters"},
         ]
 
@@ -283,7 +283,7 @@ class TestTransportSpecificMethodBehavior:
         # Test JSON-RPC specific features
         message = {
             "kind": "message",
-            "message_id": generate_test_message_id("jsonrpc-specific"),
+            "messageId": generate_test_message_id("jsonrpc-specific"),
             "role": "user",
             "parts": [{"kind": "text", "text": "JSON-RPC transport test"}],
         }
@@ -366,7 +366,7 @@ class TestMethodPerformanceAndScaling:
         for i in range(3):  # Keep small for testing
             message = {
                 "kind": "message",
-                "message_id": generate_test_message_id(f"concurrent-{i}"),
+                "messageId": generate_test_message_id(f"concurrent-{i}"),
                 "role": "user",
                 "parts": [{"kind": "text", "text": f"Concurrent test message {i}"}],
             }
@@ -406,7 +406,7 @@ class TestMethodPerformanceAndScaling:
 
         message = {
             "kind": "message",
-            "message_id": generate_test_message_id("response-time"),
+            "messageId": generate_test_message_id("response-time"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Response time test message"}],
         }

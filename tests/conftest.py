@@ -65,9 +65,9 @@ def pytest_configure(config):
 
     # Required transports (strict mode)
     if required_transports:
-        from tck.transport.base_client import TransportType
+        from tck.transport.base_client import TransportProtocol
 
-        transport_map = {"jsonrpc": TransportType.JSON_RPC, "grpc": TransportType.GRPC, "rest": TransportType.REST}
+        transport_map = {"jsonrpc": TransportProtocol.jsonrpc, "grpc": TransportProtocol.GRPC, "rest": TransportProtocol.REST}
         allow_list = []
         for transport_name in required_transports.split(","):
             name = transport_name.strip().lower()
@@ -96,7 +96,7 @@ def agent_card_data(request):
 
     # Use a session to potentially reuse connections
     with requests.Session() as session:
-        card = agent_card_utils.fetch_agent_card(sut_url, session)
+        card = agent_card_utils.fetch_agent_card(sut_url) 
         if card is None:
             pytest.fail("Failed to fetch or parse Agent Card from the SUT. Check SUT URL and Agent Card endpoint.")
         return card
@@ -277,7 +277,7 @@ def all_transport_clients(transport_manager, request):
     transport protocols. Used primarily for transport equivalence testing.
 
     Returns:
-        Dict[TransportType, BaseTransportClient]: Map of transport types to clients
+        Dict[TransportProtocol, BaseTransportClient]: Map of transport types to clients
 
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
@@ -301,7 +301,7 @@ def multi_transport_sut(transport_manager, request):
     protocols. It skips automatically if the SUT only supports a single transport.
 
     Returns:
-        Dict[TransportType, BaseTransportClient]: Map of available transport clients
+        Dict[TransportProtocol, BaseTransportClient]: Map of available transport clients
 
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence for Multi-Transport SUTs
     """
@@ -378,10 +378,10 @@ def jsonrpc_client_only(transport_manager, request):
 
     Specification Reference: A2A v0.3.0 §3.2.1 - JSON-RPC 2.0 Transport
     """
-    from tck.transport.base_client import TransportType
+    from tck.transport.base_client import TransportProtocol
 
     try:
-        client = transport_manager.get_transport_client(TransportType.JSON_RPC)
+        client = transport_manager.get_transport_client(TransportProtocol.jsonrpc)
         if client is None:
             pytest.skip("JSON-RPC transport not supported by SUT")
         return client
@@ -402,10 +402,10 @@ def grpc_client_only(transport_manager, request):
 
     Specification Reference: A2A v0.3.0 §3.2.2 - gRPC Transport
     """
-    from tck.transport.base_client import TransportType
+    from tck.transport.base_client import TransportProtocol
 
     try:
-        client = transport_manager.get_transport_client(TransportType.GRPC)
+        client = transport_manager.get_transport_client(TransportProtocol.GRPC)
         if client is None:
             pytest.skip("gRPC transport not supported by SUT")
         return client
@@ -426,10 +426,10 @@ def rest_client_only(transport_manager, request):
 
     Specification Reference: A2A v0.3.0 §3.2.3 - HTTP+JSON/REST Transport
     """
-    from tck.transport.base_client import TransportType
+    from tck.transport.base_client import TransportProtocol
 
     try:
-        client = transport_manager.get_transport_client(TransportType.REST)
+        client = transport_manager.get_transport_client(TransportProtocol.REST)
         if client is None:
             pytest.skip("REST transport not supported by SUT")
         return client

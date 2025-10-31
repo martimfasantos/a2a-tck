@@ -10,12 +10,15 @@ equivalence across all supported transports.
 Specification: A2A Protocol v0.3.0 §3 - Transport and Format
 """
 
-from .base_client import BaseTransportClient, TransportError, TransportType
-# from .transport_manager import TransportManager  # Will be added in Task 1.3
+from .base_client import BaseTransportClient, TransportError
+from a2a.types import TransportProtocol
+
+# Re-export TransportProtocol as TransportType for backward compatibility
+TransportType = TransportProtocol
 
 __all__ = [
     "BaseTransportClient",
     "TransportError",
     "TransportType",
-    # "TransportManager",  # Will be added in Task 1.3
+    "TransportProtocol",
 ]

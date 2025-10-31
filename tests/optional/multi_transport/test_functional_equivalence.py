@@ -35,7 +35,7 @@ def sample_message():
     """Create a sample message for equivalence testing."""
     return {
         "kind": "message",
-        "message_id": generate_test_message_id("equivalence"),
+        "messageId": generate_test_message_id("equivalence"),
         "role": "user",
         "parts": [{"kind": "text", "text": "Multi-transport equivalence test message"}],
     }
@@ -493,7 +493,7 @@ def test_same_error_handling_invalid_params(all_transport_clients):
     # Test with invalid message structure (missing required fields)
     invalid_message = {
         "kind": "message",
-        # Missing required fields like 'role', 'parts', 'message_id'
+        # Missing required fields like 'role', 'parts', 'messageId'
     }
 
     for transport_type, client in all_transport_clients.items():
@@ -780,7 +780,7 @@ def test_method_mapping_compliance(all_transport_clients):
                 # Test message send capability
                 sample_msg = {
                     "kind": "message",
-                    "message_id": generate_test_message_id("mapping-test"),
+                    "messageId": generate_test_message_id("mapping-test"),
                     "role": "user",
                     "parts": [{"kind": "text", "text": "Method mapping test"}],
                 }
@@ -978,7 +978,7 @@ def test_streaming_response_equivalence(all_transport_clients, sample_message):
         # Both should indicate streaming capability or provide task information
         if isinstance(base_response, dict) and isinstance(response, dict):
             # Look for common task-related fields
-            common_fields = ["id", "task", "context_id", "status"]
+            common_fields = ["id", "task", "contextId", "status"]
             for field in common_fields:
                 if field in base_response and field in response:
                     # Both should have the field with valid values

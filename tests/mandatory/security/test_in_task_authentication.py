@@ -62,7 +62,7 @@ def create_test_task_for_auth(sut_client, message_text: str = "Test task for in-
         test_message = {
             "role": "user",
             "parts": [{"kind": "text", "text": message_text}],
-            "message_id": f"auth-test-msg-{req_id}",
+            "messageId": f"auth-test-msg-{req_id}",
             "kind": "message",
         }
 

@@ -11,20 +11,13 @@ import logging
 import pytest
 
 from tck import agent_card_utils
-from tck.sut_client import SUTClient
 from tests.markers import optional_capability
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def sut_client():
-    """Fixture to provide a SUTClient instance."""
-    return SUTClient()
-
-
-@pytest.fixture(scope="module")
-def fetched_agent_card(sut_client, agent_card_data):
+def fetched_agent_card(agent_card_data):
     """
     Fixture to reuse the global agent_card_data fixture or fetch it if not available.
     """
@@ -33,7 +26,7 @@ def fetched_agent_card(sut_client, agent_card_data):
 
     # Try to fetch it directly for this test suite
     logger.info("Global agent_card_data is None, attempting to fetch directly")
-    agent_card = agent_card_utils.fetch_agent_card(sut_client.base_url, sut_client.session)
+    agent_card = agent_card_utils.fetch_agent_card(agent_card_data["url"])
 
     if agent_card is None:
         pytest.skip("Failed to fetch Agent Card - skipping Agent Extension validation tests")

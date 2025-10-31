@@ -18,7 +18,7 @@ def created_task_id(sut_client):
     # Create a task using message/send and return its id
     message_params = {
         "message": {
-            "message_id": "test-push-notification-message-id-" + str(uuid.uuid4()),
+            "messageId": "test-push-notification-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Task for push notification config test"}],
             "kind": "message",
@@ -196,8 +196,8 @@ def test_list_push_notification_config(sut_client, created_task_id, agent_card_d
     found_config = False
     for config in result:
         assert "pushNotificationConfig" in config, "Each config must contain pushNotificationConfig"
-        assert "task_id" in config, "Each config must contain task_id"
-        assert config["task_id"] == created_task_id, "task_id should match the requested task"
+        assert "taskId" in config, "Each config must contain taskId"
+        assert config["taskId"] == created_task_id, "TaskId should match the requested task"
         if config["pushNotificationConfig"]["url"] == "https://example.com/webhook1":
             found_config = True
 
@@ -223,7 +223,7 @@ def test_list_push_notification_config_empty(sut_client, agent_card_data):
     # Create a new task without any push notification configs
     message_params = {
         "message": {
-            "message_id": "test-empty-list-message-id-" + str(uuid.uuid4()),
+            "messageId": "test-empty-list-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Task for empty push notification config list test"}],
             "kind": "message",
