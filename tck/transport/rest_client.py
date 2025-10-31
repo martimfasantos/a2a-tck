@@ -800,13 +800,13 @@ class RESTClient(BaseTransportClient):
             
             # Extract configs array from protobuf ListTaskPushNotificationConfigResponse structure
             # The protobuf response has format: {"configs": [...]}
-            # But A2A tests expect just the array directly, with taskId added to each config
+            # But A2A tests expect just the array directly, with task_id added to each config
             if "configs" in configs_response:
                 configs_list = []
                 for config in configs_response["configs"]:
-                    # Add taskId to each config (extracted from the request context)
+                    # Add task_id to each config (extracted from the request context)
                     enhanced_config = config.copy()
-                    enhanced_config["taskId"] = task_id
+                    enhanced_config["task_id"] = task_id
                     configs_list.append(enhanced_config)
             else:
                 configs_list = []

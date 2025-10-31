@@ -55,7 +55,7 @@
 - test_message_send_method.py: test_message_send_valid_multiple_parts
 - test_message_send_method.py: test_message_send_continue_task
 - test_message_send_method.py: test_message_send_continue_nonexistent_task
-- test_message_send_method.py: test_message_send_continue_with_contextid
+- test_message_send_method.py: test_message_send_continue_with_context_id
 - test_message_send_method.py: test_message_send_valid_data_part
 - test_message_send_method.py: test_message_send_data_part_array
 - test_protocol_violations.py: test_duplicate_request_ids

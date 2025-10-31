@@ -194,7 +194,7 @@ class TestBaseTransportClient:
         client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
 
         # Test a method call
-        message = {"kind": "message", "messageId": "test", "role": "user", "parts": []}
+        message = {"kind": "message", "message_id": "test", "role": "user", "parts": []}
         result = client.send_message(message, extra_headers={"Auth": "Bearer token"})
 
         assert result["mocked"] is True

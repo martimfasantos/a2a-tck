@@ -115,7 +115,7 @@ def test_message_sending_equivalence(sut_client: BaseTransportClient, transport_
     test_message = {
         "role": "user",
         "parts": [{"kind": "text", "text": "Test message for transport equivalence validation"}],
-        "messageId": f"equiv-test-msg-{req_id}",
+        "message_id": f"equiv-test-msg-{req_id}",
         "kind": "message",
     }
 
@@ -222,7 +222,7 @@ def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_c
     test_message = {
         "role": "user",
         "parts": [{"kind": "text", "text": "Task for transport equivalence testing"}],
-        "messageId": f"equiv-task-msg-{req_id}",
+        "message_id": f"equiv-task-msg-{req_id}",
         "kind": "message",
     }
 
@@ -678,7 +678,7 @@ def test_concurrent_operation_equivalence(sut_client: BaseTransportClient, trans
             test_message = {
                 "role": "user",
                 "parts": [{"kind": "text", "text": f"Concurrent test message {i + 1} via {transport}"}],
-                "messageId": f"concurrent-msg-{req_id}-{i}",
+                "message_id": f"concurrent-msg-{req_id}-{i}",
                 "kind": "message",
             }
 
@@ -689,7 +689,7 @@ def test_concurrent_operation_equivalence(sut_client: BaseTransportClient, trans
             concurrent_results[transport] = {
                 "success": transport_helpers.is_json_rpc_success_response(result),
                 "response": result,
-                "message_id": test_message["messageId"],
+                "message_id": test_message["message_id"],
             }
 
             if concurrent_results[transport]["success"]:

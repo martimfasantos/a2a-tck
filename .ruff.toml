@@ -9,7 +9,7 @@
 line-length = 130
 indent-width = 4 # Google Style Guide §3.4: 4 spaces
 
-target-version = "py38" # Minimum Python version
+target-version = "py310" # Minimum Python version
 
 [lint]
 ignore = [

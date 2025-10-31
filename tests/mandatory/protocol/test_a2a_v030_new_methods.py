@@ -259,7 +259,7 @@ class TestTasksList:
             # Validate task structure
             our_task = next(t for t in tasks if t["id"] == created_task_id)
             assert "status" in our_task
-            assert "contextId" in our_task
+            assert "context_id" in our_task
             assert "kind" in our_task
             assert our_task["kind"] == "task"
 
@@ -295,7 +295,7 @@ class TestMethodMappingCompliance:
         try:
             sample_message = {
                 "kind": "message",
-                "messageId": generate_test_message_id("mapping-test"),
+                "message_id": generate_test_message_id("mapping-test"),
                 "role": "user",
                 "parts": [{"kind": "text", "text": "Method mapping test"}],
             }
@@ -509,7 +509,7 @@ class TestTransportSpecificFeatures:
                     {
                         "method": "message/send",
                         "params": {
-                            "message": {"kind": "message", "role": "user", "parts": [{"kind": "text", "text": "test"}], "messageId": "test-batch-1"}
+                            "message": {"kind": "message", "role": "user", "parts": [{"kind": "text", "text": "test"}], "message_id": "test-batch-1"}
                         },
                         "id": 2,
                     },
@@ -531,7 +531,7 @@ class TestTransportSpecificFeatures:
                 "message": {
                     "role": "user",
                     "parts": [{"kind": "text", "text": "Test for additional fields"}],
-                    "messageId": "test-additional-fields",
+                    "message_id": "test-additional-fields",
                     "kind": "message",
                 }
             }
@@ -539,7 +539,7 @@ class TestTransportSpecificFeatures:
             task = response.get("result", {})
 
             # Task may have additional fields beyond spec
-            spec_fields = {"id", "contextId", "status", "history", "artifacts", "metadata", "kind"}
+            spec_fields = {"id", "context_id", "status", "history", "artifacts", "metadata", "kind"}
             task_fields = set(task.keys())
 
             # Additional fields are allowed as long as spec fields are present

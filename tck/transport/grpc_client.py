@@ -40,7 +40,7 @@ def _validate_task_object(task: Dict[str, Any]) -> None:
     Raises A2AValidationError if validation fails.
     """
     # Validate required fields per A2A specification
-    required_fields = ["id", "contextId", "status", "kind"]
+    required_fields = ["id", "context_id", "status", "kind"]
     for field in required_fields:
         if field not in task:
             raise A2AValidationError(f"Task missing required field '{field}'", TransportType.GRPC)
@@ -55,9 +55,9 @@ def _validate_task_object(task: Dict[str, Any]) -> None:
     if not isinstance(task["id"], str) or not task["id"].strip():
         raise A2AValidationError(f"Task 'id' must be a non-empty string, got '{task['id']}'", TransportType.GRPC)
 
-    # Validate 'contextId' field (must be non-empty string)
-    if not isinstance(task["contextId"], str) or not task["contextId"].strip():
-        raise A2AValidationError(f"Task 'contextId' must be a non-empty string, got '{task['contextId']}'", TransportType.GRPC)
+    # Validate 'context_id' field (must be non-empty string)
+    if not isinstance(task["context_id"], str) or not task["context_id"].strip():
+        raise A2AValidationError(f"Task 'context_id' must be a non-empty string, got '{task['context_id']}'", TransportType.GRPC)
 
     # Validate 'status' field
     if not isinstance(task["status"], dict):
@@ -92,7 +92,7 @@ def _validate_message_object(message: Dict[str, Any], context: str = "message") 
     """
     Validate that a Message object conforms to A2A specification.
     """
-    required_fields = ["role", "parts", "messageId", "kind"]
+    required_fields = ["role", "parts", "message_id", "kind"]
     for field in required_fields:
         if field not in message:
             raise A2AValidationError(f"{context} missing required field '{field}'", TransportType.GRPC)
@@ -106,9 +106,9 @@ def _validate_message_object(message: Dict[str, Any], context: str = "message") 
     if message["role"] not in valid_roles:
         raise A2AValidationError(f"{context} 'role' must be one of {valid_roles}, got '{message['role']}'", TransportType.GRPC)
 
-    # Validate 'messageId' field
-    if not isinstance(message["messageId"], str) or not message["messageId"].strip():
-        raise A2AValidationError(f"{context} 'messageId' must be a non-empty string", TransportType.GRPC)
+    # Validate 'message_id' field
+    if not isinstance(message["message_id"], str) or not message["message_id"].strip():
+        raise A2AValidationError(f"{context} 'message_id' must be a non-empty string", TransportType.GRPC)
 
     # Validate 'parts' field
     if not isinstance(message["parts"], list):
@@ -202,14 +202,14 @@ def _validate_push_notification_config_list(config_list: List[Dict[str, Any]]) -
             raise A2AValidationError(f"Push notification config[{i}] must be an object", TransportType.GRPC)
 
         # Validate TaskPushNotificationConfig structure
-        required_fields = ["pushNotificationConfig", "taskId"]
+        required_fields = ["pushNotificationConfig", "task_id"]
         for field in required_fields:
             if field not in config:
                 raise A2AValidationError(f"Push notification config[{i}] missing required field '{field}'", TransportType.GRPC)
 
-        # Validate taskId
-        if not isinstance(config["taskId"], str):
-            raise A2AValidationError(f"Push notification config[{i}] 'taskId' must be a string", TransportType.GRPC)
+        # Validate task_id
+        if not isinstance(config["task_id"], str):
+            raise A2AValidationError(f"Push notification config[{i}] 'task_id' must be a string", TransportType.GRPC)
 
         # Validate pushNotificationConfig structure
         push_config = config["pushNotificationConfig"]
@@ -399,14 +399,14 @@ class GRPCClient(BaseTransportClient):
         """
         try:
             # Accept both A2A and internal naming - don't provide defaults for required fields
-            msg_id = message.get("messageId") or message.get("message_id")
-            ctx_id = message.get("contextId") or message.get("context_id")
+            msg_id = message.get("message_id") or message.get("message_id")
+            ctx_id = message.get("context_id") or message.get("context_id")
 
             # Check if required fields are missing to allow SUT validation
             if not msg_id:
-                msg_id = ""  # Let SUT handle missing messageId validation
+                msg_id = ""  # Let SUT handle missing message_id validation
             if not ctx_id:
-                ctx_id = ""  # Let SUT handle missing contextId validation
+                ctx_id = ""  # Let SUT handle missing context_id validation
             logger.debug(f"Sending message via gRPC: {msg_id}")
 
             # Build protobuf request
@@ -449,7 +449,7 @@ class GRPCClient(BaseTransportClient):
             pb_msg = pb.Message(
                 message_id=msg_id,
                 context_id=ctx_id,
-                task_id=message.get("taskId", ""),
+                task_id=message.get("task_id", ""),
                 role=pb_role,
                 content=parts,
             )
@@ -463,7 +463,7 @@ class GRPCClient(BaseTransportClient):
                 logger.info(f"Received gRPC task for message {msg_id}: {t.id}")
                 result = {
                     "id": t.id,
-                    "contextId": t.context_id,
+                    "context_id": t.context_id,
                     "status": {"state": self._map_state_enum_to_json(t.status.state)},
                     "kind": "task",
                 }
@@ -476,7 +476,7 @@ class GRPCClient(BaseTransportClient):
                 result = {
                     "kind": "message",
                     "role": "agent",
-                    "messageId": m.message_id,
+                    "message_id": m.message_id,
                     "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
                 }
                 # Note: Message validation would need to be implemented for message responses
@@ -512,8 +512,8 @@ class GRPCClient(BaseTransportClient):
             TransportError: If gRPC streaming call fails
         """
         try:
-            msg_id = message.get("messageId") or message.get("message_id") or "unknown"
-            ctx_id = message.get("contextId") or message.get("context_id") or "default-context"
+            msg_id = message.get("message_id") or message.get("message_id") or "unknown"
+            ctx_id = message.get("context_id") or message.get("context_id") or "default-context"
             logger.info(f"Starting gRPC streaming for message: {msg_id}")
 
             # Build protobuf request
@@ -538,7 +538,7 @@ class GRPCClient(BaseTransportClient):
                         yield {
                             "task": {
                                 "id": t.id,
-                                "contextId": t.context_id,
+                                "context_id": t.context_id,
                                 "status": {"state": self._map_state_enum_to_json(t.status.state)},
                                 "kind": "task",
                             }
@@ -547,8 +547,8 @@ class GRPCClient(BaseTransportClient):
                         su = response.status_update
                         yield {
                             "status_update": {
-                                "taskId": su.task_id,
-                                "contextId": su.context_id,
+                                "task_id": su.task_id,
+                                "context_id": su.context_id,
                                 "status": {"state": self._map_state_enum_to_json(su.status.state)},
                                 "final": getattr(su, "final", False),
                             }
@@ -559,7 +559,7 @@ class GRPCClient(BaseTransportClient):
                             "message": {
                                 "kind": "message",
                                 "role": "agent",
-                                "messageId": m.message_id,
+                                "message_id": m.message_id,
                                 "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
                             }
                         }
@@ -612,7 +612,7 @@ class GRPCClient(BaseTransportClient):
             resp = self.stub.GetTask(req, timeout=self.timeout)
             result = {
                 "id": resp.id,
-                "contextId": resp.context_id,
+                "context_id": resp.context_id,
                 "status": {"state": self._map_state_enum_to_json(resp.status.state)},
                 "kind": "task",
             }
@@ -622,9 +622,9 @@ class GRPCClient(BaseTransportClient):
                     {
                         "role": ("agent" if m.role == pb.ROLE_AGENT else "user"),
                         "parts": ([{"kind": "text", "text": m.content[0].text}] if m.content else []),
-                        "messageId": m.message_id,
-                        "taskId": resp.id,
-                        "contextId": resp.context_id,
+                        "message_id": m.message_id,
+                        "task_id": resp.id,
+                        "context_id": resp.context_id,
                         "kind": "message",
                     }
                     for m in resp.history
@@ -671,7 +671,7 @@ class GRPCClient(BaseTransportClient):
             logger.debug(f"Cancelled task via gRPC: {task_id}")
             result = {
                 "id": resp.id,
-                "contextId": resp.context_id,
+                "context_id": resp.context_id,
                 "status": {"state": "canceled"},
                 "kind": "task",
             }
@@ -754,7 +754,7 @@ class GRPCClient(BaseTransportClient):
                         yield {
                             "task": {
                                 "id": t.id,
-                                "contextId": t.context_id,
+                                "context_id": t.context_id,
                                 "status": {"state": self._map_state_enum_to_json(t.status.state)},
                                 "kind": "task",
                             }
@@ -763,8 +763,8 @@ class GRPCClient(BaseTransportClient):
                         su = response.status_update
                         yield {
                             "status_update": {
-                                "taskId": su.task_id,
-                                "contextId": su.context_id,
+                                "task_id": su.task_id,
+                                "context_id": su.context_id,
                                 "status": {"state": self._map_state_enum_to_json(su.status.state)},
                                 "final": getattr(su, "final", False),
                             }
@@ -1051,7 +1051,7 @@ class GRPCClient(BaseTransportClient):
                             "token": config.push_notification_config.token,
                             "authentication": {},
                         },
-                        "taskId": task_id,
+                        "task_id": task_id,
                     }
                 )
 
@@ -1181,14 +1181,14 @@ class GRPCClient(BaseTransportClient):
         pb = self._pb
         
         # Accept both A2A and internal naming - don't provide defaults for required fields
-        msg_id = message.get("messageId") or message.get("message_id")
-        ctx_id = message.get("contextId") or message.get("context_id")
+        msg_id = message.get("message_id") or message.get("message_id")
+        ctx_id = message.get("context_id") or message.get("context_id")
 
         # Check if required fields are missing to allow SUT validation
         if not msg_id:
-            msg_id = ""  # Let SUT handle missing messageId validation
+            msg_id = ""  # Let SUT handle missing message_id validation
         if not ctx_id:
-            ctx_id = ""  # Let SUT handle missing contextId validation
+            ctx_id = ""  # Let SUT handle missing context_id validation
 
         # Build parts - handle different part types appropriately
         parts = []
@@ -1232,7 +1232,7 @@ class GRPCClient(BaseTransportClient):
         pb_msg = pb.Message(
             message_id=msg_id,
             context_id=ctx_id,
-            task_id=message.get("taskId", ""),
+            task_id=message.get("task_id", ""),
             role=pb_role,
             content=parts,
         )
@@ -1418,7 +1418,7 @@ class GRPCClient(BaseTransportClient):
                         "tasks": [
                             {
                                 "id": task.id,
-                                "contextId": task.context_id,
+                                "context_id": task.context_id,
                                 "status": {"state": self._map_state_enum_to_json(task.status.state)},
                                 "kind": "task",
                             }

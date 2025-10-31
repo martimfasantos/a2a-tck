@@ -17,7 +17,7 @@ def text_message_params():
     return {
         "message": {
             "kind": "message",
-            "messageId": "test-state-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-state-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Hello from TCK state transition test!"}],
         }
@@ -30,7 +30,7 @@ def follow_up_message_params(text_message_params):
     return {
         "message": {
             "kind": "message",
-            "messageId": "test-followup-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-followup-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Follow-up message for state transition test"}],
         }
@@ -51,7 +51,7 @@ def test_task_history_length(sut_client):
     create_params = {
         "message": {
             "kind": "message",
-            "messageId": "test-history-create-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-history-create-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Initial message for history test"}],
         }
@@ -70,9 +70,9 @@ def test_task_history_length(sut_client):
         follow_up_params = {
             "message": {
                 "kind": "message",
-                "messageId": f"test-history-message-{i + 1}-" + str(uuid.uuid4()),
+                "message_id": f"test-history-message-{i + 1}-" + str(uuid.uuid4()),
                 "role": "user",
-                "taskId": task_id,
+                "task_id": task_id,
                 "parts": [{"kind": "text", "text": f"Follow-up message {i + 1} for history test"}],
             }
         }

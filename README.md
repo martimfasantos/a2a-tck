@@ -19,7 +19,7 @@ The TCK transforms A2A specification compliance from guesswork into a clear, str
 ### 1. **Testing Your A2A Implementation** (You're likely here for this)
 Use the TCK to validate your A2A implementation:
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report report.json
+uv run run_tck.py --sut-url http://localhost:9999 --category all --compliance-report report.json
 ```
 
 ### 2. **Managing A2A Specification Updates** (Advanced/Maintainer workflow)
@@ -80,8 +80,6 @@ Use the TCK to validate your A2A implementation:
    
    # Create virtual environment
    uv venv
-   source .venv/bin/activate  # Linux/macOS
-   # .venv\\Scripts\\activate   # Windows
    
    # Install dependencies
    uv pip install -e .
@@ -177,31 +175,31 @@ You can then proceed to run the TCK tests against your SUT.
 
 ### 1. **Check A2A Compliance** (Start Here!)
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --category mandatory
+uv run run_tck.py --sut-url http://localhost:9999 --category mandatory
 ```
 **Result**: ✅ Pass = A2A compliant, ❌ Fail = NOT A2A compliant
 
 ### 2. **Validate Capability Honesty**
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --category capabilities
+uv run run_tck.py --sut-url http://localhost:9999 --category capabilities
 ```
 **Result**: Ensures declared capabilities actually work (prevents false advertising)
 
 ### 3. **Validate Multi-Transport Equivalence** (A2A v0.3.0)
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --category transport-equivalence
+uv run run_tck.py --sut-url http://localhost:9999 --category transport-equivalence
 ```
 **Result**: Ensures functional equivalence across declared transport types (JSON-RPC, gRPC, REST)
 
 ### 4. **Assess Production Readiness**  
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --category quality
+uv run run_tck.py --sut-url http://localhost:9999 --category quality
 ```
 **Result**: Identifies issues that may affect production deployment
 
 ### 5. **Generate Comprehensive Report**
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --category all --compliance-report compliance.json
+uv run run_tck.py --sut-url http://localhost:9999 --category all --compliance-report compliance.json
 ```
 **Result**: Complete assessment with compliance level and recommendations
 
@@ -211,10 +209,10 @@ You can then proceed to run the TCK tests against your SUT.
 
 ```bash
 # Get help and understand test categories
-./run_tck.py --explain
+uv run run_tck.py --explain
 
 # Test specific category
-./run_tck.py --sut-url URL --category CATEGORY
+uv run run_tck.py --sut-url URL --category CATEGORY
 
 # Available categories:
 #   mandatory             - A2A compliance validation (MUST pass)  
@@ -229,16 +227,16 @@ You can then proceed to run the TCK tests against your SUT.
 
 ```bash
 # Generate detailed compliance report
-./run_tck.py --sut-url URL --category all --compliance-report report.json
+uv run run_tck.py --sut-url URL --category all --compliance-report report.json
 
 # Verbose output with detailed logging
-./run_tck.py --sut-url URL --category mandatory --verbose
+uv run run_tck.py --sut-url URL --category mandatory --verbose
 
 # Generate HTML report (additional)
-./run_tck.py --sut-url URL --category all --report
+uv run run_tck.py --sut-url URL --category all --report
 
 # Skip Agent Card fetching (for non-standard implementations)  
-./run_tck.py --sut-url URL --category mandatory --skip-agent-card
+uv run run_tck.py --sut-url URL --category mandatory --skip-agent-card
 ```
 
 ### **A2A v0.3.0 Multi-Transport Testing**
@@ -247,37 +245,37 @@ The TCK supports A2A v0.3.0 multi-transport architecture with advanced transport
 
 ```bash
 # Test with specific transport strategy
-./run_tck.py --sut-url URL --category all --transport-strategy prefer_jsonrpc
+uv run run_tck.py --sut-url URL --category all --transport-strategy prefer_jsonrpc
 
 # Force a specific transport via strategy
-./run_tck.py --sut-url URL --category all --transport-strategy prefer_grpc
+uv run run_tck.py --sut-url URL --category all --transport-strategy prefer_grpc
 
 # Enable transport equivalence testing (default: enabled)
-./run_tck.py --sut-url URL --category all --enable-equivalence-testing
+uv run run_tck.py --sut-url URL --category all --enable-equivalence-testing
 
 # Test only transport equivalence with specific configuration
-./run_tck.py --sut-url URL --category transport-equivalence \
+uv run run_tck.py --sut-url URL --category transport-equivalence \
   --transport-strategy all_supported
 
 # Strict transport selection (required transports, no fallback)
-./run_tck.py --sut-url URL --category all \
+uv run run_tck.py --sut-url URL --category all \
   --transport-strategy prefer_grpc \
   --transports grpc \
   --enable-equivalence-testing
 
 # Run per-transport single-client tests for JSON-RPC and gRPC, then equivalence
-./run_tck.py --sut-url URL --category all \
+uv run run_tck.py --sut-url URL --category all \
   --transports jsonrpc,grpc
 
 # With compliance reports (one per transport; filenames get _jsonrpc/_grpc suffixes)
-./run_tck.py --sut-url URL --category all \
+uv run run_tck.py --sut-url URL --category all \
   --transports jsonrpc,grpc \
   --compliance-report reports/compliance.json
 
 ### gRPC usage
 
 ```bash
-./run_tck.py --sut-url http://localhost:9999 --category mandatory --transports grpc
+uv run run_tck.py --sut-url http://localhost:9999 --category mandatory --transports grpc
 ```
 
 ### **Understanding Multi-Transport Options**
@@ -371,19 +369,19 @@ The TCK supports additional environment variables for A2A v0.3.0 multi-transport
 ```bash
 # Use .env file (recommended)
 echo "TCK_STREAMING_TIMEOUT=5.0" > .env
-./run_tck.py --sut-url URL --category capabilities
+uv run run_tck.py --sut-url URL --category capabilities
 
 # Set directly for single run
-TCK_STREAMING_TIMEOUT=1.0 ./run_tck.py --sut-url URL --category capabilities
+TCK_STREAMING_TIMEOUT=1.0 uv run run_tck.py --sut-url URL --category capabilities
 
 # Debug with very slow timeouts
-TCK_STREAMING_TIMEOUT=30.0 ./run_tck.py --sut-url URL --category capabilities --verbose
+TCK_STREAMING_TIMEOUT=30.0 uv run run_tck.py --sut-url URL --category capabilities --verbose
 
 # A2A v0.3.0 multi-transport configuration via environment (strict single transport)
-A2A_TRANSPORT_STRATEGY=prefer_grpc A2A_REQUIRED_TRANSPORTS=grpc ./run_tck.py --sut-url URL --category all
+A2A_TRANSPORT_STRATEGY=prefer_grpc A2A_REQUIRED_TRANSPORTS=grpc uv run run_tck.py --sut-url URL --category all
 
 # Run both JSON-RPC and gRPC per-transport, then equivalence (via env)
-A2A_REQUIRED_TRANSPORTS=jsonrpc,grpc ./run_tck.py --sut-url URL --category all
+A2A_REQUIRED_TRANSPORTS=jsonrpc,grpc uv run run_tck.py --sut-url URL --category all
 
 # Complex multi-transport setup in .env file
 cat > .env << EOF
@@ -393,7 +391,7 @@ A2A_ENABLE_EQUIVALENCE_TESTING=true
 A2A_GRPC_TIMEOUT=30
 A2A_JSONRPC_TIMEOUT=15
 EOF
-./run_tck.py --sut-url URL --category all
+uv run run_tck.py --sut-url URL --category all
 ```
 
 **When to adjust timeouts**:
@@ -545,7 +543,7 @@ When you run with `--compliance-report`, you get a JSON report containing:
 ```bash
 #!/bin/bash
 # Block deployment if not A2A compliant
-./run_tck.py --sut-url $SUT_URL --category mandatory
+uv run run_tck.py --sut-url $SUT_URL --category mandatory
 if [ $? -ne 0 ]; then
     echo "❌ NOT A2A compliant - blocking deployment"
     exit 1
@@ -557,7 +555,7 @@ echo "✅ A2A compliant - deployment approved"
 ```bash
 #!/bin/bash
 # Generate compliance report and make environment-specific decisions
-./run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json
+uv run run_tck.py --sut-url $SUT_URL --category all --compliance-report compliance.json
 
 COMPLIANCE_LEVEL=$(jq -r '.summary.compliance_level' compliance.json)
 
@@ -664,28 +662,28 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **Just want A2A compliance?**
 ```bash
-./run_tck.py --sut-url URL --category mandatory
+uv run run_tck.py --sut-url URL --category mandatory
 ```
 
 **Planning production deployment?**  
 ```bash
-./run_tck.py --sut-url URL --category all --compliance-report report.json
+uv run run_tck.py --sut-url URL --category all --compliance-report report.json
 ```
 
 **Debugging capability issues?**
 ```bash
-./run_tck.py --sut-url URL --category capabilities --verbose
+uv run run_tck.py --sut-url URL --category capabilities --verbose
 ```
 
 **Testing A2A v0.3.0 multi-transport implementation?**
 ```bash
-./run_tck.py --sut-url URL --category transport-equivalence --transport-strategy all_supported
+uv run run_tck.py --sut-url URL --category transport-equivalence --transport-strategy all_supported
 ```
 
 **Want comprehensive assessment?**
 ```bash
-./run_tck.py --sut-url URL --explain  # Learn about categories first
-./run_tck.py --sut-url URL --category all --compliance-report full_report.json
+uv run run_tck.py --sut-url URL --explain  # Learn about categories first
+uv run run_tck.py --sut-url URL --category all --compliance-report full_report.json
 ```
 
 The A2A TCK transforms specification compliance from confusion into clarity. 🚀

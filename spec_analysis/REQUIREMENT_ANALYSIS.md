@@ -48,8 +48,8 @@
 
 AgentCard: ['capabilities', 'defaultInputModes', 'defaultOutputModes', 'description', 'name', 'skills', 'url', 'version']
 
-Message: ['kind', 'messageId', 'parts', 'role']
+Message: ['kind', 'message_id', 'parts', 'role']
 
-Task: ['contextId', 'id', 'kind', 'status']
+Task: ['context_id', 'id', 'kind', 'status']
 
 Part: []

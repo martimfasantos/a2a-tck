@@ -21,7 +21,7 @@ def text_message_params():
     """Create a basic text message params object"""
     return {
         "message": {
-            "messageId": "test-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Hello from concurrency test!"}],
             "kind": "message",
@@ -160,8 +160,8 @@ def test_concurrent_operations_same_task(sut_client, text_message_params):
     def update_task():
         params = {
             "message": {
-                "taskId": task_id,
-                "messageId": "test-update-message-id-" + str(uuid.uuid4()),
+                "task_id": task_id,
+                "message_id": "test-update-message-id-" + str(uuid.uuid4()),
                 "role": "user",
                 "parts": [{"kind": "text", "text": f"Concurrent update {uuid.uuid4()}"}],
                 "kind": "message",

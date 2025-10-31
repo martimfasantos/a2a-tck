@@ -19,7 +19,7 @@ def created_task_id(sut_client):
     params = {
         "message": {
             "kind": "message",
-            "messageId": generate_test_message_id("get-test"),
+            "message_id": generate_test_message_id("get-test"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Task for get test"}],
         }

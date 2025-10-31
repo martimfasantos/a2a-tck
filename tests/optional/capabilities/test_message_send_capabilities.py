@@ -76,7 +76,7 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
     combined_parts = {
         "message": {
             "kind": "message",
-            "messageId": "test-multiple-parts-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-multiple-parts-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": valid_text_message_params["message"]["parts"] + valid_file_message_params["message"]["parts"],
         }
@@ -89,7 +89,7 @@ def test_message_send_valid_multiple_parts(sut_client, valid_text_message_params
 
 
 @optional_capability
-def test_message_send_continue_with_contextid(sut_client, valid_text_message_params):
+def test_message_send_continue_with_context_id(sut_client, valid_text_message_params):
     """
     OPTIONAL CAPABILITY: A2A Specification §6.5 - Context Management
 
@@ -110,25 +110,25 @@ def test_message_send_continue_with_contextid(sut_client, valid_text_message_par
     assert transport_helpers.is_json_rpc_success_response(first_resp)
     task_id = first_resp["result"]["id"]
 
-    # Check if the response contains a contextId we can use
+    # Check if the response contains a context_id we can use
     context_id = None
     if "result" in first_resp and isinstance(first_resp["result"], dict):
-        context_id = first_resp["result"].get("contextId")
+        context_id = first_resp["result"].get("context_id")
 
-    # If no contextId was provided, create a dummy one
+    # If no context_id was provided, create a dummy one
     if not context_id:
         context_id = f"tck-context-{message_utils.generate_request_id()}"
-        logger.info(f"No contextId found in initial task, using dummy: {context_id}")
+        logger.info(f"No context_id found in initial task, using dummy: {context_id}")
 
-    # Send a follow-up message with both taskId and contextId
+    # Send a follow-up message with both task_id and context_id
     continuation_params = {
         "message": {
             "kind": "message",
-            "taskId": task_id,
-            "contextId": context_id,
-            "messageId": "test-contextid-message-id-" + str(uuid.uuid4()),
+            "task_id": task_id,
+            "context_id": context_id,
+            "message_id": "test-context_id-message-id-" + str(uuid.uuid4()),
             "role": "user",
-            "parts": [{"kind": "text", "text": "Follow-up message for the existing task with contextId"}],
+            "parts": [{"kind": "text", "text": "Follow-up message for the existing task with context_id"}],
         }
     }
     second_resp = transport_helpers.transport_send_message(sut_client, continuation_params)
@@ -195,7 +195,7 @@ def test_message_send_data_part_array(sut_client, agent_card_data):
     data_array_params = {
         "message": {
             "kind": "message",
-            "messageId": "test-data-array-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-data-array-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [
                 {

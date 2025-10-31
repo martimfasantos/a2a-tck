@@ -75,7 +75,7 @@ async def test_message_stream_basic(sut_client, agent_card_data):
     message_params = {
         "message": {
             "kind": "message",
-            "messageId": generate_test_message_id("stream"),
+            "message_id": generate_test_message_id("stream"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Stream test message"}],
         }
@@ -128,10 +128,10 @@ async def test_message_stream_basic(sut_client, agent_card_data):
                 assert isinstance(event["status"], dict)
             elif "kind" in event and event.get("kind") == "status-update":
                 # Looks like a TaskStatusUpdateEvent
-                assert "taskId" in event
+                assert "task_id" in event
             elif "kind" in event and event.get("kind") == "artifact-update":
                 # Looks like a TaskArtifactUpdateEvent
-                assert "taskId" in event
+                assert "task_id" in event
                 assert "artifact" in event
             elif "kind" in event and event.get("kind") == "message":
                 # Looks like a Message
@@ -237,7 +237,7 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
         message_params = {
             "message": {
                 "kind": "message",
-                "messageId": "test-resubscribe-message-id-" + str(uuid.uuid4()),
+                "message_id": "test-resubscribe-message-id-" + str(uuid.uuid4()),
                 "role": "user",
                 "parts": [{"kind": "text", "text": "Test message for resubscribe"}],
             }
@@ -513,7 +513,7 @@ async def test_sse_header_compliance(sut_client, agent_card_data):
     message_params = {
         "message": {
             "kind": "message",
-            "messageId": generate_test_message_id("sse-headers"),
+            "message_id": generate_test_message_id("sse-headers"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Test SSE headers"}],
         }
@@ -575,7 +575,7 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
     message_params = {
         "message": {
             "kind": "message",
-            "messageId": generate_test_message_id("sse-format"),
+            "message_id": generate_test_message_id("sse-format"),
             "role": "user",
             "parts": [{"kind": "text", "text": "Test SSE event format"}],
         }
@@ -606,9 +606,9 @@ async def test_sse_event_format_compliance(sut_client, agent_card_data):
                     assert "role" in event, "Message events must have role field"
                     assert "parts" in event, "Message events must have parts field"
                 elif event["kind"] == "status-update":
-                    assert "taskId" in event, "Status update events must have taskId field"
+                    assert "task_id" in event, "Status update events must have task_id field"
                 elif event["kind"] == "artifact-update":
-                    assert "taskId" in event, "Artifact update events must have taskId field"
+                    assert "task_id" in event, "Artifact update events must have task_id field"
                     assert "artifact" in event, "Artifact update events must have artifact field"
             elif "status" in event and "id" in event:
                 # This looks like a Task object
@@ -657,7 +657,7 @@ async def test_streaming_connection_resilience(sut_client, agent_card_data):
     params = {
         "message": {
             "kind": "message",
-            "messageId": "test-resilience-" + str(uuid.uuid4()),
+            "message_id": "test-resilience-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Simple task for resilience test"}],
         }

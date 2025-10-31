@@ -7,7 +7,7 @@ name = "a2a-tck"
 version = "0.1.0"
 description = "Technology Compatibility Kit for the A2A Protocol"
 readme = "README.md"
-requires-python = ">=3.8.1"
+requires-python = ">=3.10"
 authors = [
     {name = "A2A Protocol Developers"}
 ]
@@ -22,25 +22,26 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.20.0",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
     "pytest-json-report>=1.5.0",
-    "httpx>=0.24.0",
-    "requests>=2.31.0",
-    "responses>=0.23.0",
-    "types-requests>=2.30.0",
-    "deepdiff>=6.7.1",
-    "jsonschema>=4.20.0",
-    "packaging>=21.0",
-    "PyYAML>=5.0.0",
-    "python-dotenv>=1.0.0",
+    "httpx>=0.28.1",
+    "requests>=2.32.5",
+    "responses>=0.25.8",
+    "types-requests>=2.32.4.20250913",
+    "deepdiff>=8.6.1",
+    "jsonschema>=4.25.1",
+    "packaging>=25.0",
+    "PyYAML>=6.0.3",
+    "python-dotenv>=1.2.1",
     # gRPC support for v0.3.0 multi-transport
-    "grpcio>=1.62.0",
-    "grpcio-tools>=1.62.0",
-    "protobuf>=4.25.0",
-    "googleapis-common-protos>=1.63.0",
+    "grpcio>=1.76.0",
+    "grpcio-tools>=1.76.0",
+    "protobuf>=6.33.0",
+    "googleapis-common-protos>=1.71.0",
     # Enhanced TLS/certificate analysis
-    "pyOpenSSL>=23.0.0",
+    "pyOpenSSL>=25.3.0",
+    "a2a-sdk>=0.3.10",
 ]
 
 [project.optional-dependencies]
@@ -95,6 +96,6 @@ profile = "black"
 line_length = 100
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true

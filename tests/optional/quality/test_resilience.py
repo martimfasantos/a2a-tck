@@ -25,7 +25,7 @@ def text_message_params():
     return {
         "message": {
             "kind": "message",
-            "messageId": "test-resilience-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-resilience-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Hello from resilience test!"}],
         }
@@ -218,9 +218,9 @@ def test_partial_update_recovery(sut_client, text_message_params):
         params = {
             "message": {
                 "kind": "message",
-                "messageId": "test-update-message-id-" + str(uuid.uuid4()),
+                "message_id": "test-update-message-id-" + str(uuid.uuid4()),
                 "role": "user",
-                "taskId": task_id,
+                "task_id": task_id,
                 "parts": [{"kind": "text", "text": text}],
             }
         }

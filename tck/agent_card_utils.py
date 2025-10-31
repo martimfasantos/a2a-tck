@@ -10,7 +10,15 @@ Specification Reference: A2A Protocol v0.3.0 §5 - Agent Discovery
 
 import json
 import logging
-import urllib.parse
+from a2a.client import (
+    A2ACardResolver,
+    Client,
+    ClientConfig,
+    ClientFactory,
+    create_text_message_object,
+)
+from a2a.types import TransportProtocol
+from a2a.utils.message import get_message_text
 from typing import Any, Dict, List, Optional, Set, Union, cast
 
 import requests

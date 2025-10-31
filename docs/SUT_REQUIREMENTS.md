@@ -6,12 +6,12 @@ This document outlines **additional requirements** that a System Under Test (SUT
 
 **For testing purposes only**, your SUT must implement the following behavior:
 
-When your SUT receives a `message/stream` request with a `messageId` that starts with `"test-resubscribe-message-id"`, the resulting task MUST remain active (not complete) for **at least `2 × TCK_STREAMING_TIMEOUT`** seconds.
+When your SUT receives a `message/stream` request with a `message_id` that starts with `"test-resubscribe-message-id"`, the resulting task MUST remain active (not complete) for **at least `2 × TCK_STREAMING_TIMEOUT`** seconds.
 
 ### Configuration Details
 - **Default**: `TCK_STREAMING_TIMEOUT = 2.0` seconds → Task must run for ≥ 4.0 seconds
 - **Custom**: If `TCK_STREAMING_TIMEOUT = 5.0` → Task must run for ≥ 10.0 seconds
-- **Detection**: Check if `params.message.messageId.startsWith("test-resubscribe-message-id")`
+- **Detection**: Check if `params.message.message_id.startsWith("test-resubscribe-message-id")`
 
 ### Why This Is Required
 - The TCK tests `tasks/resubscribe` functionality by creating a task, then resubscribing to it

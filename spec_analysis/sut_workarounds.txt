@@ -1,6 +1,6 @@
-python-sut/tck_core_agent/agent_executor.py:class TckCoreAgent:
-python-sut/tck_core_agent/agent_executor.py:class TckCoreAgentExecutor(AgentExecutor):
-python-sut/tck_core_agent/agent_executor.py:        self.agent = TckCoreAgent()
+python-sut/tck_core_agent/agent_executor.py:class TCKCoreAgent:
+python-sut/tck_core_agent/agent_executor.py:class TCKCoreAgentExecutor(AgentExecutor):
+python-sut/tck_core_agent/agent_executor.py:        self.agent = TCKCoreAgent()
 python-sut/tck_core_agent/custom_request_handler.py:class TckCoreRequestHandler(DefaultRequestHandler):
 python-sut/tck_core_agent/.venv/bin/activate.nu:# To customize the overlay name, you can call `overlay use activate.nu as foo`,
 python-sut/tck_core_agent/.venv/bin/activate.ps1:        # Add the custom prefix to the existing prompt
@@ -312,8 +312,8 @@ python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a/utils/telemetry
 python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a/utils/telemetry.py:    2. As a decorator factory to provide arguments: `@trace_function(span_name="custom.name")`
 python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a_sdk-0.0.0.post111.dev0+ae3bb10.dist-info/licenses/LICENSE:      except as required for reasonable and customary use in describing the
 python-sut/tck_core_agent/.venv/lib/python3.13/site-packages/a2a_sdk-0.0.0.post111.dev0+ae3bb10.dist-info/METADATA:              except as required for reasonable and customary use in describing the
-python-sut/tck_core_agent/__main__.py:    TckCoreAgentExecutor,  # type: ignore[import-untyped]
+python-sut/tck_core_agent/__main__.py:    TCKCoreAgentExecutor,  # type: ignore[import-untyped]
 python-sut/tck_core_agent/__main__.py:from custom_request_handler import (
 python-sut/tck_core_agent/__main__.py:    TckCoreRequestHandler,  # type: ignore[import-untyped]
-python-sut/tck_core_agent/__main__.py:    agent_executor = TckCoreAgentExecutor()
+python-sut/tck_core_agent/__main__.py:    agent_executor = TCKCoreAgentExecutor()
 python-sut/tck_core_agent/__main__.py:        http_handler=TckCoreRequestHandler(agent_executor=agent_executor, task_store=task_store),

@@ -58,7 +58,7 @@ def create_test_task(sut_client) -> Optional[str]:
         test_message = {
             "role": "user",
             "parts": [{"kind": "text", "text": "Test message for error testing"}],
-            "messageId": f"msg-{req_id}",
+            "message_id": f"msg-{req_id}",
             "kind": "message",
         }
 
@@ -172,7 +172,7 @@ def test_unsupported_operation_error_32004_enhanced(sut_client):
     test_message = {
         "role": "user",
         "parts": [{"kind": "text", "text": "Test message with extreme parameters"}],
-        "messageId": f"msg-{req_id}",
+        "message_id": f"msg-{req_id}",
         "kind": "message",
     }
 
@@ -256,7 +256,7 @@ def test_content_type_not_supported_error_32005_enhanced(sut_client):
                 },
             },
         ],
-        "messageId": f"msg-{req_id}",
+        "message_id": f"msg-{req_id}",
         "kind": "message",
     }
 
@@ -302,7 +302,7 @@ def test_content_type_not_supported_error_32005_enhanced(sut_client):
                 },
             }
         ],
-        "messageId": f"msg-{req_id}-2",
+        "message_id": f"msg-{req_id}-2",
         "kind": "message",
     }
 
@@ -355,7 +355,7 @@ def test_invalid_agent_response_error_32006_enhanced(sut_client):
                 },
             },
         ],
-        "messageId": f"msg-{req_id}",
+        "message_id": f"msg-{req_id}",
         "kind": "message",
     }
 

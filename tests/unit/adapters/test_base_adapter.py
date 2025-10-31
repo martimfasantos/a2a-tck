@@ -24,23 +24,23 @@ class MockTransportClient(BaseTransportClient):
 
     def send_message(self, message: Dict[str, Any], **kwargs):
         self.call_log.append(("send_message", message, kwargs))
-        return {"taskId": "test-task-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"}
+        return {"task_id": "test-task-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"}
 
     def send_streaming_message(self, message: Dict[str, Any], **kwargs):
         self.call_log.append(("send_streaming_message", message, kwargs))
-        return iter([{"taskId": "test-task-123", "state": "pending"}])
+        return iter([{"task_id": "test-task-123", "state": "pending"}])
 
     def get_task(self, task_id: str, **kwargs):
         self.call_log.append(("get_task", task_id, kwargs))
-        return {"taskId": task_id, "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
+        return {"task_id": task_id, "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
 
     def cancel_task(self, task_id: str, **kwargs):
         self.call_log.append(("cancel_task", task_id, kwargs))
-        return {"taskId": task_id, "state": "cancelled"}
+        return {"task_id": task_id, "state": "cancelled"}
 
     def resubscribe_task(self, task_id: str, **kwargs):
         self.call_log.append(("resubscribe_task", task_id, kwargs))
-        return iter([{"taskId": task_id, "state": "in-progress"}])
+        return iter([{"task_id": task_id, "state": "in-progress"}])
 
     def set_push_notification_config(self, task_id: str, config: Dict[str, Any], **kwargs):
         self.call_log.append(("set_push_notification_config", task_id, config, kwargs))
@@ -310,7 +310,7 @@ class TestBaseTransportAdapter:
         result = adapter.test_get_task(test_context, task_id, history_length=5)
 
         assert result.outcome == TestOutcome.PASS
-        assert result.sut_response["taskId"] == task_id
+        assert result.sut_response["task_id"] == task_id
         assert result.duration_ms is not None
 
         # Verify the mock client was called
@@ -332,13 +332,13 @@ class TestBaseTransportAdapter:
     def test_assert_valid_task_response(self, adapter, test_context):
         """Test task response validation."""
         # Valid response
-        valid_response = {"taskId": "task-123", "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
+        valid_response = {"task_id": "task-123", "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
         failures = adapter.assert_valid_task_response(valid_response, test_context)
         assert len(failures) == 0
 
         # Invalid response - missing required field
         invalid_response = {
-            "taskId": "task-123",
+            "task_id": "task-123",
             "createdAt": "2025-08-02T10:00:00Z",
             # Missing 'state'
         }
@@ -347,7 +347,7 @@ class TestBaseTransportAdapter:
         assert "Missing required field 'state'" in failures[0]
 
         # Invalid state
-        invalid_state_response = {"taskId": "task-123", "state": "invalid-state", "createdAt": "2025-08-02T10:00:00Z"}
+        invalid_state_response = {"task_id": "task-123", "state": "invalid-state", "createdAt": "2025-08-02T10:00:00Z"}
         failures = adapter.assert_valid_task_response(invalid_state_response, test_context)
         assert len(failures) == 1
         assert "Invalid task state 'invalid-state'" in failures[0]

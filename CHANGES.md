@@ -1,0 +1,5 @@
+- change names like "taskId" to "task_id", "messageId" to "message_id", etc to follow Python naming conventions and the A2A SDK style
+- added classes from the a2a-sdk to handle agent cards and messages
+- updated the min python version to 3.10 in config files to respect the a2a-sdk min version
+- updated dependencies to include the a2a-sdk package
+- updated dependency versions in pyproject.toml to latest compatible versions

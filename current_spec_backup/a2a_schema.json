@@ -402,7 +402,7 @@
           "type": "string"
         },
         "params": {
-          "$ref": "#/definitions/TaskIdParams",
+          "$ref": "#/definitions/task_idParams",
           "description": "A Structured value that holds the parameter values to be used during the invocation of the method."
         }
       },
@@ -634,7 +634,7 @@
           "type": "string"
         },
         "params": {
-          "$ref": "#/definitions/TaskIdParams",
+          "$ref": "#/definitions/task_idParams",
           "description": "A Structured value that holds the parameter values to be used during the invocation of the method."
         }
       },
@@ -1118,7 +1118,7 @@
     "Message": {
       "description": "Represents a single message exchanged between user and agent.",
       "properties": {
-        "contextId": {
+        "context_id": {
           "description": "The context the message is associated with",
           "type": "string"
         },
@@ -1134,7 +1134,7 @@
           "description": "Event type",
           "type": "string"
         },
-        "messageId": {
+        "message_id": {
           "description": "Identifier created by the message creator",
           "type": "string"
         },
@@ -1150,7 +1150,7 @@
           },
           "type": "array"
         },
-        "referenceTaskIds": {
+        "referencetask_ids": {
           "description": "List of tasks referenced as context by this message.",
           "items": {
             "type": "string"
@@ -1165,14 +1165,14 @@
           ],
           "type": "string"
         },
-        "taskId": {
+        "task_id": {
           "description": "Identifier of task the message is related to",
           "type": "string"
         }
       },
       "required": [
         "kind",
-        "messageId",
+        "message_id",
         "parts",
         "role"
       ],
@@ -1706,7 +1706,7 @@
           },
           "type": "array"
         },
-        "contextId": {
+        "context_id": {
           "description": "Server-generated id for contextual alignment across interactions",
           "type": "string"
         },
@@ -1736,7 +1736,7 @@
         }
       },
       "required": [
-        "contextId",
+        "context_id",
         "id",
         "kind",
         "status"
@@ -1754,7 +1754,7 @@
           "$ref": "#/definitions/Artifact",
           "description": "Generated artifact"
         },
-        "contextId": {
+        "context_id": {
           "description": "The context the task is associated with",
           "type": "string"
         },
@@ -1772,20 +1772,20 @@
           "description": "Extension metadata.",
           "type": "object"
         },
-        "taskId": {
+        "task_id": {
           "description": "Task id",
           "type": "string"
         }
       },
       "required": [
         "artifact",
-        "contextId",
+        "context_id",
         "kind",
-        "taskId"
+        "task_id"
       ],
       "type": "object"
     },
-    "TaskIdParams": {
+    "task_idParams": {
       "description": "Parameters containing only a task ID, used for simple task operations.",
       "properties": {
         "id": {
@@ -1855,14 +1855,14 @@
           "$ref": "#/definitions/PushNotificationConfig",
           "description": "Push notification configuration."
         },
-        "taskId": {
+        "task_id": {
           "description": "Task id.",
           "type": "string"
         }
       },
       "required": [
         "pushNotificationConfig",
-        "taskId"
+        "task_id"
       ],
       "type": "object"
     },
@@ -1908,7 +1908,7 @@
           "type": "string"
         },
         "params": {
-          "$ref": "#/definitions/TaskIdParams",
+          "$ref": "#/definitions/task_idParams",
           "description": "A Structured value that holds the parameter values to be used during the invocation of the method."
         }
       },
@@ -1958,7 +1958,7 @@
     "TaskStatusUpdateEvent": {
       "description": "Sent by server during sendStream or subscribe requests",
       "properties": {
-        "contextId": {
+        "context_id": {
           "description": "The context the task is associated with",
           "type": "string"
         },
@@ -1980,17 +1980,17 @@
           "$ref": "#/definitions/TaskStatus",
           "description": "Current status of the task"
         },
-        "taskId": {
+        "task_id": {
           "description": "Task id",
           "type": "string"
         }
       },
       "required": [
-        "contextId",
+        "context_id",
         "final",
         "kind",
         "status",
-        "taskId"
+        "task_id"
       ],
       "type": "object"
     },

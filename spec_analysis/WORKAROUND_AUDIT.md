@@ -9,7 +9,7 @@
 - **Action**: **COMPLETED** - File deleted, using standard implementation
 - **Status**: Tests now properly fail when historyLength is not implemented (as expected)
 
-### 2. TckCoreAgentExecutor (agent_executor.py) - **KEPT**
+### 2. TCKCoreAgentExecutor (agent_executor.py) - **KEPT**
 - **Purpose**: Provides custom agent implementation for TCK testing
 - **Why Needed**: Implements specific test responses for TCK
 - **Impact**: Makes tests pass with predictable responses

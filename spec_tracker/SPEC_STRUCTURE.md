@@ -58,11 +58,11 @@
    - Optional: provider, documentationUrl, securitySchemes, security, supportsAuthenticatedExtendedCard
 
 2. **Message**
-   - Required: kind, messageId, parts, role
-   - Optional: contextId, taskId, referenceTaskIds
+   - Required: kind, message_id, parts, role
+   - Optional: context_id, task_id, referencetask_ids
 
 3. **Task** 
-   - Required: contextId, id, kind, status
+   - Required: context_id, id, kind, status
    - Optional: artifacts, history
 
 4. **Part Objects**

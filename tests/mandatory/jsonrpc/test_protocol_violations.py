@@ -22,7 +22,7 @@ def text_message_params():
     return {
         "message": {
             "kind": "message",
-            "messageId": "test-protocol-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-protocol-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Hello from protocol violation test!"}],
         }

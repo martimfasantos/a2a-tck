@@ -37,15 +37,15 @@ class MockJSONRPCClient(JSONRPCClient):
         if method == "message/send":
             return {
                 "jsonrpc": "2.0",
-                "result": {"taskId": "test-task-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"},
+                "result": {"task_id": "test-task-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"},
                 "id": request_id or "test-id",
             }
         elif method == "tasks/get":
-            task_id = params.get("taskId", "unknown-task")
+            task_id = params.get("task_id", "unknown-task")
             return {
                 "jsonrpc": "2.0",
                 "result": {
-                    "taskId": task_id,
+                    "task_id": task_id,
                     "state": "completed",
                     "createdAt": "2025-08-02T10:00:00Z",
                     "completedAt": "2025-08-02T10:05:00Z",
@@ -53,8 +53,8 @@ class MockJSONRPCClient(JSONRPCClient):
                 "id": request_id or "test-id",
             }
         elif method == "tasks/cancel":
-            task_id = params.get("taskId", "unknown-task")
-            return {"jsonrpc": "2.0", "result": {"taskId": task_id, "state": "cancelled"}, "id": request_id or "test-id"}
+            task_id = params.get("task_id", "unknown-task")
+            return {"jsonrpc": "2.0", "result": {"task_id": task_id, "state": "cancelled"}, "id": request_id or "test-id"}
         elif method == "agent/getAuthenticatedExtendedCard":
             return {
                 "jsonrpc": "2.0",
@@ -72,11 +72,11 @@ class MockJSONRPCClient(JSONRPCClient):
     def send_streaming_message(self, message: Dict[str, Any], extra_headers=None):
         self.call_log.append(("send_streaming_message", message, extra_headers))
         # For streaming, return proper task data
-        yield {"taskId": "test-task-stream-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"}
+        yield {"task_id": "test-task-stream-123", "state": "pending", "createdAt": "2025-08-02T10:00:00Z"}
 
     def get_task(self, task_id: str, history_length=None, extra_headers=None):
         self.call_log.append(("get_task", task_id, history_length, extra_headers))
-        params = {"taskId": task_id}
+        params = {"task_id": task_id}
         if history_length is not None:
             params["historyLength"] = history_length
         response = self._make_jsonrpc_request("tasks/get", params, extra_headers=extra_headers)
@@ -84,7 +84,7 @@ class MockJSONRPCClient(JSONRPCClient):
 
     def cancel_task(self, task_id: str, extra_headers=None):
         self.call_log.append(("cancel_task", task_id, extra_headers))
-        response = self._make_jsonrpc_request("tasks/cancel", {"taskId": task_id}, extra_headers=extra_headers)
+        response = self._make_jsonrpc_request("tasks/cancel", {"task_id": task_id}, extra_headers=extra_headers)
         return response["result"]
 
     def get_agent_card(self, extra_headers=None):
@@ -94,7 +94,7 @@ class MockJSONRPCClient(JSONRPCClient):
 
     # Implement remaining abstract methods with minimal functionality
     def resubscribe_task(self, task_id: str, extra_headers=None):
-        return iter([{"taskId": task_id, "state": "in-progress"}])
+        return iter([{"task_id": task_id, "state": "in-progress"}])
 
     def set_push_notification_config(self, task_id: str, config: Dict[str, Any], extra_headers=None):
         return {"configId": "config-123"}
@@ -165,7 +165,7 @@ class TestJSONRPCTestAdapter:
         assert result.transport_type == TransportType.JSON_RPC
         assert result.duration_ms is not None
         assert result.sut_response is not None
-        assert result.sut_response["taskId"] == "test-task-123"
+        assert result.sut_response["task_id"] == "test-task-123"
         assert result.assertions_passed == 1
         assert result.assertions_total == 1
 
@@ -197,7 +197,7 @@ class TestJSONRPCTestAdapter:
 
         assert result.outcome == TestOutcome.PASS
         assert result.sut_response["stream_items"] == 1
-        assert result.sut_response["first_item"]["taskId"] == "test-task-stream-123"
+        assert result.sut_response["first_item"]["task_id"] == "test-task-stream-123"
         assert result.duration_ms is not None
 
     def test_get_task_success(self, adapter, test_context):
@@ -208,7 +208,7 @@ class TestJSONRPCTestAdapter:
         result = adapter.test_get_task(test_context, task_id, history_length=5)
 
         assert result.outcome == TestOutcome.PASS
-        assert result.sut_response["taskId"] == task_id
+        assert result.sut_response["task_id"] == task_id
         assert result.duration_ms is not None
 
         # Verify the mock client was called correctly
@@ -222,7 +222,7 @@ class TestJSONRPCTestAdapter:
         """Test task retrieval that returns wrong task ID."""
         # Mock to return different task ID than requested
         adapter.jsonrpc_client.get_task = Mock(
-            return_value={"taskId": "different-task", "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
+            return_value={"task_id": "different-task", "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
         )
 
         result = adapter.test_get_task(test_context, "requested-task")
@@ -237,7 +237,7 @@ class TestJSONRPCTestAdapter:
         result = adapter.test_cancel_task(test_context, task_id)
 
         assert result.outcome == TestOutcome.PASS
-        assert result.sut_response["taskId"] == task_id
+        assert result.sut_response["task_id"] == task_id
         assert result.duration_ms is not None
 
     def test_get_agent_card_success(self, adapter, test_context):
@@ -266,25 +266,25 @@ class TestJSONRPCTestAdapter:
     def test_jsonrpc_task_response_validation(self, adapter, test_context):
         """Test JSON-RPC specific task response validation."""
         # Valid response
-        valid_response = {"taskId": "test-123", "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
+        valid_response = {"task_id": "test-123", "state": "completed", "createdAt": "2025-08-02T10:00:00Z"}
         failures = adapter._assert_valid_jsonrpc_task_response(valid_response, test_context)
         assert len(failures) == 0
 
         # Invalid timestamp format
-        invalid_timestamp_response = {"taskId": "test-123", "state": "completed", "createdAt": "invalid-timestamp"}
+        invalid_timestamp_response = {"task_id": "test-123", "state": "completed", "createdAt": "invalid-timestamp"}
         failures = adapter._assert_valid_jsonrpc_task_response(invalid_timestamp_response, test_context)
         assert len(failures) == 1
         assert "Invalid timestamp format" in failures[0]
 
         # Non-string task ID
-        invalid_taskid_response = {
-            "taskId": 123,  # Should be string
+        invalid_task_id_response = {
+            "task_id": 123,  # Should be string
             "state": "completed",
             "createdAt": "2025-08-02T10:00:00Z",
         }
-        failures = adapter._assert_valid_jsonrpc_task_response(invalid_taskid_response, test_context)
+        failures = adapter._assert_valid_jsonrpc_task_response(invalid_task_id_response, test_context)
         assert len(failures) == 1
-        assert "taskId must be string" in failures[0]
+        assert "task_id must be string" in failures[0]
 
     def test_capability_methods(self, adapter):
         """Test JSON-RPC specific capability detection."""

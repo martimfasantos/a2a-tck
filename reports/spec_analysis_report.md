@@ -100,7 +100,7 @@ target url and the...
 
 - `test_message_send_valid_multiple_parts` in `test_message_send_capabilities`
 
-- `test_message_send_continue_with_contextid` in `test_message_send_capabilities`
+- `test_message_send_continue_with_context_id` in `test_message_send_capabilities`
 
 - `test_message_send_valid_data_part` in `test_message_send_capabilities`
 
@@ -352,7 +352,7 @@ target url and the...
 
 - `test_invalid_authentication` in `test_authentication`
 
-- `test_message_send_continue_with_contextid` in `test_message_send_capabilities`
+- `test_message_send_continue_with_context_id` in `test_message_send_capabilities`
 
 - `test_message_send_valid_data_part` in `test_message_send_capabilities`
 

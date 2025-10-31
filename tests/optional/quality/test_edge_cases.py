@@ -32,7 +32,7 @@ def test_very_long_string(sut_client):
     long_text = "A" * (1024 * 1024)  # 1MB string
     params = {
         "message": {
-            "messageId": "test-long-string-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-long-string-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": long_text}],
             "kind": "message",
@@ -70,7 +70,7 @@ def test_empty_arrays(sut_client):
     # Empty parts array (should be rejected)
     params = {
         "message": {
-            "messageId": "test-empty-array-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-empty-array-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [],
             "kind": "message",
@@ -101,11 +101,11 @@ def test_null_optional_fields(sut_client):
     """
     params = {
         "message": {
-            "messageId": "test-null-fields-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-null-fields-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Hello with null fields"}],
-            "taskId": None,  # Explicitly null
-            "contextId": None,  # Explicitly null
+            "task_id": None,  # Explicitly null
+            "context_id": None,  # Explicitly null
             "metadata": None,  # Explicitly null
             "kind": "message",
         }
@@ -142,7 +142,7 @@ def test_unexpected_json_types(sut_client):
     - Specification compliance for type requirements
     """
     params = {
-        "taskId": 12345  # Integer instead of expected string
+        "task_id": 12345  # Integer instead of expected string
     }
 
     req = message_utils.make_json_rpc_request("tasks/get", params=params)
@@ -174,7 +174,7 @@ def test_extra_fields(sut_client):
     """
     params = {
         "message": {
-            "messageId": "test-extra-fields-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-extra-fields-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Message with extra fields"}],
             "_extra_field": "This field is not in the spec",
@@ -212,7 +212,7 @@ def test_unicode_and_special_chars(sut_client):
     """
     params = {
         "message": {
-            "messageId": "test-unicode-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-unicode-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": "Unicode: 你好, здравствуйте, مرحبا, こんにちは\nControl chars: \t\b\f\r\n"}],
             "kind": "message",
@@ -275,7 +275,7 @@ def _create_simple_task(sut_client):
     """Create a simple task and return its ID."""
     params = {
         "message": {
-            "messageId": "test-simple-task-message-id-" + str(uuid.uuid4()),
+            "message_id": "test-simple-task-message-id-" + str(uuid.uuid4()),
             "role": "user",
             "parts": [{"kind": "text", "text": f"Simple task for edge case testing {uuid.uuid4()}"}],
             "kind": "message",

@@ -97,7 +97,7 @@ def test_push_notification_not_supported_error_32003(sut_client):
     test_message = {
         "role": "user",
         "parts": [{"kind": "text", "text": "Test message for push notification error test"}],
-        "messageId": f"msg-{req_id}",
+        "message_id": f"msg-{req_id}",
         "kind": "message",
     }
 
@@ -120,7 +120,7 @@ def test_push_notification_not_supported_error_32003(sut_client):
 
         # Now attempt to set push notification config on the task
         push_config_params = {
-            "taskId": task_id,
+            "task_id": task_id,
             "pushNotificationConfig": {"url": "https://example.com/webhook", "token": "test-token"},
         }
 
@@ -198,7 +198,7 @@ def test_unsupported_operation_error_32004(sut_client):
             message_data = {
                 "role": "user",
                 "parts": [{"kind": "text", "text": "test message for streaming"}],
-                "messageId": f"msg-{req_id}",
+                "message_id": f"msg-{req_id}",
                 "kind": "message",
             }
 
@@ -224,7 +224,7 @@ def test_unsupported_operation_error_32004(sut_client):
     req_id = message_utils.generate_request_id()
 
     # Attempt message/send with potentially unsupported configuration
-    message_data = {"role": "user", "parts": [{"kind": "text", "text": "test"}], "messageId": f"msg-{req_id}", "kind": "message"}
+    message_data = {"role": "user", "parts": [{"kind": "text", "text": "test"}], "message_id": f"msg-{req_id}", "kind": "message"}
 
     # Add configuration that might not be supported
     params = {
@@ -298,7 +298,7 @@ def test_content_type_not_supported_error_32005(sut_client):
                 },
             },
         ],
-        "messageId": f"msg-{req_id}",
+        "message_id": f"msg-{req_id}",
         "kind": "message",
     }
 
@@ -329,7 +329,7 @@ def test_content_type_not_supported_error_32005(sut_client):
     message_data = {
         "role": "user",
         "parts": [{"kind": "text", "text": "Generate output in unsupported format"}],
-        "messageId": f"msg-{req_id}",
+        "message_id": f"msg-{req_id}",
         "kind": "message",
     }
 

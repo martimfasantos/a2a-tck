@@ -42,9 +42,9 @@ It explains the differences between test types and helps you choose what to run.
    → Purely informational, no action required
 
 Usage:
-    ./run_tck.py --sut-url http://localhost:9999 --category mandatory
-    ./run_tck.py --sut-url http://localhost:9999 --category all
-    ./run_tck.py --sut-url http://localhost:9999 --explain
+    uv run run_tck.py --sut-url http://localhost:9999 --category mandatory
+    uv run run_tck.py --sut-url http://localhost:9999 --category all
+    uv run run_tck.py --sut-url http://localhost:9999 --explain
 """
 
 import subprocess
