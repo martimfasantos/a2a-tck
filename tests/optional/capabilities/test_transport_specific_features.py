@@ -18,7 +18,7 @@ import httpx
 from tests.markers import optional_capability, a2a_v030
 from tests.utils.transport_helpers import is_transport_client, get_client_transport_type, generate_test_message_id
 from tck import config, message_utils
-from tck.transport.base_client import BaseTransportClient
+from a2a.client import Client
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class TestJSONRPCSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_json_rpc_batch_requests(self, sut_client: BaseTransportClient):
+    def test_json_rpc_batch_requests(self, sut_client: Client):
         """
         A2A v0.3.0 §3.1 - JSON-RPC Batch Request Support
 
@@ -95,7 +95,7 @@ class TestJSONRPCSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_json_rpc_notification_requests(self, sut_client: BaseTransportClient):
+    def test_json_rpc_notification_requests(self, sut_client: Client):
         """
         A2A v0.3.0 §3.1 - JSON-RPC Notification Support
 
@@ -148,7 +148,7 @@ class TestJSONRPCSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_json_rpc_error_extensions(self, sut_client: BaseTransportClient):
+    def test_json_rpc_error_extensions(self, sut_client: Client):
         """
         A2A v0.3.0 §3.1 - JSON-RPC Extended Error Information
 
@@ -211,7 +211,7 @@ class TestGRPCSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_grpc_bidirectional_streaming(self, sut_client: BaseTransportClient):
+    def test_grpc_bidirectional_streaming(self, sut_client: Client):
         """
         A2A v0.3.0 §3.2 - gRPC Bidirectional Streaming
 
@@ -232,7 +232,7 @@ class TestGRPCSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_grpc_metadata_handling(self, sut_client: BaseTransportClient):
+    def test_grpc_metadata_handling(self, sut_client: Client):
         """
         A2A v0.3.0 §3.2 - gRPC Metadata and Headers
 
@@ -253,7 +253,7 @@ class TestGRPCSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_grpc_compression_support(self, sut_client: BaseTransportClient):
+    def test_grpc_compression_support(self, sut_client: Client):
         """
         A2A v0.3.0 §3.2 - gRPC Compression
 
@@ -283,7 +283,7 @@ class TestRESTSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_rest_http_verb_mapping(self, sut_client: BaseTransportClient):
+    def test_rest_http_verb_mapping(self, sut_client: Client):
         """
         A2A v0.3.0 §3.3 - REST HTTP Verb Mapping
 
@@ -311,7 +311,7 @@ class TestRESTSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_rest_pagination_support(self, sut_client: BaseTransportClient):
+    def test_rest_pagination_support(self, sut_client: Client):
         """
         A2A v0.3.0 §3.3 - REST API Pagination
 
@@ -332,7 +332,7 @@ class TestRESTSpecificFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_rest_content_negotiation(self, sut_client: BaseTransportClient):
+    def test_rest_content_negotiation(self, sut_client: Client):
         """
         A2A v0.3.0 §3.3 - REST Content Negotiation
 
@@ -445,7 +445,7 @@ class TestMultiModalFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_file_reference_handling(self, sut_client: BaseTransportClient):
+    def test_file_reference_handling(self, sut_client: Client):
         """
         A2A v0.3.0 §6.5.2 - File Reference Parts
 
@@ -481,7 +481,7 @@ class TestMultiModalFeatures:
 
     @optional_capability
     @a2a_v030
-    def test_binary_data_handling(self, sut_client: BaseTransportClient):
+    def test_binary_data_handling(self, sut_client: Client):
         """
         A2A v0.3.0 §6.5.3 - Data Parts with Binary Content
 

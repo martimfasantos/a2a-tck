@@ -20,15 +20,10 @@ from a2a.types import (
     SecurityScheme,
 )
 
-from tck.sut_client import SUTClient
-
 logger = logging.getLogger(__name__)
 
 
-async def fetch_agent_card(
-    sut_base_url: str,
-    sut_client: SUTClient
-) -> Optional[AgentCard]:
+async def fetch_agent_card(sut_base_url: str) -> Optional[AgentCard]:
     """
     Retrieve the Agent Card JSON from the SUT.
 
@@ -37,10 +32,9 @@ async def fetch_agent_card(
 
     Args:
         sut_base_url: The base URL of the SUT
-        session: A requests.Session object to use for making the request
 
     Returns:
-        The parsed Agent Card JSON as a dictionary, or None if it cannot be retrieved or parsed
+        The parsed Agent Card, or None if it cannot be retrieved or parsed
 
     Specification Reference: A2A Protocol v0.3.0 §5.3 - Recommended Location
     """
@@ -121,7 +115,7 @@ def get_supported_modalities(agent_card: AgentCard, skill_id: Optional[str] = No
     Get the supported modalities (input/output modes) from the Agent Card.
 
     Args:
-        agent_card: The parsed Agent Card data
+        agent_card: The parsed Agent Card data (AgentCard object or dict)
         skill_id: Optional skill ID to get modalities for a specific skill
 
     Returns:
@@ -129,19 +123,20 @@ def get_supported_modalities(agent_card: AgentCard, skill_id: Optional[str] = No
     """
     modalities: Set[str] = set()
     
-    if agent_card.skills and isinstance(agent_card.skills, list[AgentSkill]):
-        skills = agent_card.skills
-
+    skills = agent_card.skills
+    
+    if skills and isinstance(skills, list):
         for skill in skills:
             if isinstance(skill, AgentSkill):
                 # Skip if we're looking for a specific skill and this isn't it
                 if skill_id and skill.id != skill_id:
                     continue
+                io_modes = skill.input_modes
+            else:
+                continue
 
-                if skill.input_modes:
-                    io_modes = skill.input_modes
-                    if isinstance(io_modes, list):
-                        modalities.update(mode for mode in io_modes if isinstance(mode, str))
+            if io_modes and isinstance(io_modes, list):
+                modalities.update(mode for mode in io_modes if isinstance(mode, str))
 
     return list(modalities)
 

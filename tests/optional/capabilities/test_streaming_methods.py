@@ -10,7 +10,7 @@ from tests.markers import optional_capability
 from tests.capability_validator import CapabilityValidator, skip_if_capability_not_declared
 from tests.utils.transport_helpers import (
     transport_send_streaming_message,
-    transport_resubscribe_task,
+    transport_resubscribe,
     generate_test_message_id,
 )
 
@@ -291,7 +291,7 @@ async def test_tasks_resubscribe(sut_client, agent_card_data):
                 logger.info(f"Starting resubscribe for task ID: {task_id}")
                 
                 # Use transport-agnostic task resubscription
-                resubscribe_stream = transport_resubscribe_task(sut_client, task_id)
+                resubscribe_stream = transport_resubscribe(sut_client, task_id)
 
                 event_count = 0
                 async for event in resubscribe_stream:
@@ -401,7 +401,7 @@ async def test_tasks_resubscribe_nonexistent(sut_client, agent_card_data):
 
     try:
         # Use transport-agnostic task resubscription with non-existent task ID
-        resubscribe_stream = transport_resubscribe_task(sut_client, task_id)
+        resubscribe_stream = transport_resubscribe(sut_client, task_id)
         events = []
         error_found = False
 

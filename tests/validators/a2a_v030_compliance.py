@@ -12,7 +12,8 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Union
 from enum import Enum
 
-from tck.transport.base_client import BaseTransportClient, TransportType
+from a2a.types import TransportProtocol
+from a2a.client import Client
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class TransportComplianceValidator:
     """
 
     @staticmethod
-    def validate_transport_compliance(transport_client: BaseTransportClient) -> Dict[str, Any]:
+    def validate_transport_compliance(transport_client: Client) -> Dict[str, Any]:
         """
         Validate transport compliance for a specific transport client.
 
@@ -74,11 +75,11 @@ class TransportComplianceValidator:
         }
 
         # Define required methods for each transport type
-        if transport_type == TransportType.JSON_RPC:
+        if transport_type == TransportProtocol.jsonrpc:
             validation_result.update(TransportComplianceValidator._validate_jsonrpc_compliance(transport_client))
-        elif transport_type == TransportType.GRPC:
+        elif transport_type == TransportProtocol.grpc:
             validation_result.update(TransportComplianceValidator._validate_grpc_compliance(transport_client))
-        elif transport_type == TransportType.REST:
+        elif transport_type == TransportProtocol.http_json:
             validation_result.update(TransportComplianceValidator._validate_rest_compliance(transport_client))
         else:
             validation_result["compliant"] = False
@@ -87,7 +88,7 @@ class TransportComplianceValidator:
         return validation_result
 
     @staticmethod
-    def _validate_jsonrpc_compliance(transport_client: BaseTransportClient) -> Dict[str, Any]:
+    def _validate_jsonrpc_compliance(transport_client: Client) -> Dict[str, Any]:
         """
         Validate JSON-RPC 2.0 transport compliance.
 
@@ -122,7 +123,7 @@ class TransportComplianceValidator:
         return result
 
     @staticmethod
-    def _validate_grpc_compliance(transport_client: BaseTransportClient) -> Dict[str, Any]:
+    def _validate_grpc_compliance(transport_client: Client) -> Dict[str, Any]:
         """
         Validate gRPC transport compliance.
 
@@ -160,7 +161,7 @@ class TransportComplianceValidator:
         return result
 
     @staticmethod
-    def _validate_rest_compliance(transport_client: BaseTransportClient) -> Dict[str, Any]:
+    def _validate_rest_compliance(transport_client: Client) -> Dict[str, Any]:
         """
         Validate HTTP+JSON/REST transport compliance.
 
@@ -248,7 +249,7 @@ class MethodMappingValidator:
     }
 
     @staticmethod
-    def validate_method_mapping(transport_clients: Dict[TransportType, BaseTransportClient]) -> Dict[str, Any]:
+    def validate_method_mapping(transport_clients: Dict[TransportProtocol, Client]) -> Dict[str, Any]:
         """
         Validate method mapping consistency across multiple transports.
 
@@ -298,7 +299,7 @@ class FunctionalEquivalenceValidator:
     """
 
     @staticmethod
-    def validate_response_equivalence(responses: Dict[TransportType, Any], method_name: str) -> Dict[str, Any]:
+    def validate_response_equivalence(responses: Dict[TransportProtocol, Any], method_name: str) -> Dict[str, Any]:
         """
         Validate that responses from different transports are functionally equivalent.
 
@@ -432,7 +433,7 @@ class ErrorHandlingValidator:
     """
 
     @staticmethod
-    def validate_error_code_mapping(error_response: Dict[str, Any], transport_type: TransportType) -> Dict[str, Any]:
+    def validate_error_code_mapping(error_response: Dict[str, Any], transport_type: TransportProtocol) -> Dict[str, Any]:
         """
         Validate that error codes are properly mapped for the transport.
 
@@ -454,11 +455,11 @@ class ErrorHandlingValidator:
         }
 
         # Extract error code based on transport type
-        if transport_type == TransportType.JSON_RPC:
+        if transport_type == TransportProtocol.jsonrpc:
             validation_result.update(ErrorHandlingValidator._validate_jsonrpc_error(error_response))
-        elif transport_type == TransportType.GRPC:
+        elif transport_type == TransportProtocol.grpc:
             validation_result.update(ErrorHandlingValidator._validate_grpc_error(error_response))
-        elif transport_type == TransportType.REST:
+        elif transport_type == TransportProtocol.http_json:
             validation_result.update(ErrorHandlingValidator._validate_rest_error(error_response))
 
         return validation_result
@@ -525,7 +526,7 @@ class ErrorHandlingValidator:
 
 
 # Convenience function for comprehensive A2A v0.3.0 compliance validation
-def validate_a2a_v030_compliance(transport_clients: Dict[TransportType, BaseTransportClient]) -> Dict[str, Any]:
+def validate_a2a_v030_compliance(transport_clients: Dict[TransportProtocol, Client]) -> Dict[str, Any]:
     """
     Perform comprehensive A2A v0.3.0 compliance validation.
 

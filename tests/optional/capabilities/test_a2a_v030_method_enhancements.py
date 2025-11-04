@@ -26,7 +26,7 @@ from tests.utils.transport_helpers import (
     generate_test_task_id,
 )
 from tck import message_utils
-from tck.transport.base_client import BaseTransportClient
+from a2a.client import Client
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class TestA2AV030MethodEnhancements:
 
     @optional_capability
     @a2a_v030
-    def test_message_send_enhanced_parts_support(self, sut_client: BaseTransportClient):
+    def test_message_send_enhanced_parts_support(self, sut_client: Client):
         """
         A2A v0.3.0 §7.1 - Enhanced Parts Support in message/send
 
@@ -75,7 +75,7 @@ class TestA2AV030MethodEnhancements:
 
     @optional_capability
     @a2a_v030
-    def test_tasks_get_enhanced_parameters(self, sut_client: BaseTransportClient):
+    def test_tasks_get_enhanced_parameters(self, sut_client: Client):
         """
         A2A v0.3.0 §7.3.1 - Enhanced TaskQueryParams
 
@@ -127,7 +127,7 @@ class TestA2AV030MethodEnhancements:
 
     @optional_capability
     @a2a_v030
-    def test_authenticated_extended_card_comprehensive(self, sut_client: BaseTransportClient):
+    def test_authenticated_extended_card_comprehensive(self, sut_client: Client):
         """
         A2A v0.3.0 §7.10 - Comprehensive agent/getAuthenticatedExtendedCard Testing
 
@@ -177,7 +177,7 @@ class TestA2AV030MethodEnhancements:
 
     @optional_capability
     @a2a_v030
-    def test_method_parameter_validation_enhancements(self, sut_client: BaseTransportClient):
+    def test_method_parameter_validation_enhancements(self, sut_client: Client):
         """
         A2A v0.3.0 - Enhanced Parameter Validation
 
@@ -217,7 +217,7 @@ class TestA2AV030MethodEnhancements:
 
     @optional_capability
     @a2a_v030
-    def test_error_response_enhancements(self, sut_client: BaseTransportClient):
+    def test_error_response_enhancements(self, sut_client: Client):
         """
         A2A v0.3.0 - Enhanced Error Response Format
 
@@ -266,7 +266,7 @@ class TestTransportSpecificMethodBehavior:
 
     @optional_capability
     @a2a_v030
-    def test_json_rpc_method_extensions(self, sut_client: BaseTransportClient):
+    def test_json_rpc_method_extensions(self, sut_client: Client):
         """
         A2A v0.3.0 §3.1 - JSON-RPC Transport Method Extensions
 
@@ -303,7 +303,7 @@ class TestTransportSpecificMethodBehavior:
 
     @optional_capability
     @a2a_v030
-    def test_grpc_method_optimizations(self, sut_client: BaseTransportClient):
+    def test_grpc_method_optimizations(self, sut_client: Client):
         """
         A2A v0.3.0 §3.2 - gRPC Transport Method Optimizations
 
@@ -324,7 +324,7 @@ class TestTransportSpecificMethodBehavior:
 
     @optional_capability
     @a2a_v030
-    def test_rest_api_method_mappings(self, sut_client: BaseTransportClient):
+    def test_rest_api_method_mappings(self, sut_client: Client):
         """
         A2A v0.3.0 §3.3 - REST API Method Mappings
 
@@ -354,7 +354,7 @@ class TestMethodPerformanceAndScaling:
 
     @optional_capability
     @a2a_v030
-    def test_concurrent_method_calls(self, sut_client: BaseTransportClient):
+    def test_concurrent_method_calls(self, sut_client: Client):
         """
         A2A v0.3.0 - Concurrent Method Call Handling
 
@@ -395,7 +395,7 @@ class TestMethodPerformanceAndScaling:
 
     @optional_capability
     @a2a_v030
-    def test_method_response_times(self, sut_client: BaseTransportClient):
+    def test_method_response_times(self, sut_client: Client):
         """
         A2A v0.3.0 - Method Response Time Validation
 

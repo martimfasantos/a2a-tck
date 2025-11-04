@@ -21,7 +21,7 @@ from typing import Dict, Any, List, Optional, Tuple
 import pytest
 
 from tck import config, message_utils
-from tck.transport.base_client import BaseTransportClient
+from a2a.client import Client
 from tests.markers import mandatory
 from tests.utils import transport_helpers
 
@@ -62,7 +62,7 @@ def transport_capabilities():
     return capabilities
 
 
-def execute_equivalent_operation(sut_client: BaseTransportClient, operation: str, params: Dict[str, Any], transport: str = "http_jsonrpc") -> Dict[str, Any]:
+def execute_equivalent_operation(sut_client: Client, operation: str, params: Dict[str, Any], transport: str = "http_jsonrpc") -> Dict[str, Any]:
     """
     Execute the same logical operation across different transports.
 
@@ -81,7 +81,7 @@ def execute_equivalent_operation(sut_client: BaseTransportClient, operation: str
 
 
 @mandatory
-def test_message_sending_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_message_sending_equivalence(sut_client: Client, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Message Sending Transport Equivalence
 
@@ -188,7 +188,7 @@ def test_message_sending_equivalence(sut_client: BaseTransportClient, transport_
 
 
 @mandatory
-def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_task_retrieval_equivalence(sut_client: Client, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Task Retrieval Transport Equivalence
 
@@ -316,7 +316,7 @@ def test_task_retrieval_equivalence(sut_client: BaseTransportClient, transport_c
 
 
 @mandatory
-def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_agent_card_access_equivalence(sut_client: Client, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Agent Card Access Transport Equivalence
 
@@ -412,7 +412,7 @@ def test_agent_card_access_equivalence(sut_client: BaseTransportClient, transpor
 
 
 @mandatory
-def test_error_handling_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_error_handling_equivalence(sut_client: Client, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Error Handling Transport Equivalence
 
@@ -521,7 +521,7 @@ def test_error_handling_equivalence(sut_client: BaseTransportClient, transport_c
 
 
 @mandatory
-def test_performance_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_performance_equivalence(sut_client: Client, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Performance Transport Equivalence
 
@@ -639,7 +639,7 @@ def test_performance_equivalence(sut_client: BaseTransportClient, transport_capa
 
 
 @mandatory
-def test_concurrent_operation_equivalence(sut_client: BaseTransportClient, transport_capabilities):
+def test_concurrent_operation_equivalence(sut_client: Client, transport_capabilities):
     """
     MANDATORY: A2A v0.3.0 Section 3.0 - Concurrent Operation Transport Equivalence
 

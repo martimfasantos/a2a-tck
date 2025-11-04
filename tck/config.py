@@ -12,18 +12,15 @@ import os
 from typing import Optional, Dict, List
 from a2a.types import TransportProtocol
 
-# Backward compatibility alias
-TransportType = TransportProtocol
-
 # These will be set by pytest via conftest.py
 _sut_url: Optional[str] = None
 _test_scope: str = "core"
 
 # Transport configuration - A2A v0.3.0 multi-transport support
 _transport_selection_strategy: str = "agent_preferred"
-_preferred_transport: Optional[TransportType] = None
-_disabled_transports: List[TransportType] = []
-_required_transports: Optional[List[TransportType]] = None
+_preferred_transport: Optional[TransportProtocol] = None
+_disabled_transports: List[TransportProtocol] = []
+_required_transports: Optional[List[TransportProtocol]] = None
 _transport_specific_config: Dict[str, Dict[str, str]] = {}
 _enable_transport_equivalence_testing: bool = True
 
@@ -101,7 +98,7 @@ def get_transport_selection_strategy() -> str:
     return _transport_selection_strategy
 
 
-def set_preferred_transport(transport_type: Optional[TransportType]):
+def set_preferred_transport(transport_type: Optional[TransportProtocol]):
     """
     Set a preferred transport type for testing.
 
@@ -112,7 +109,7 @@ def set_preferred_transport(transport_type: Optional[TransportType]):
     _preferred_transport = transport_type
 
 
-def get_preferred_transport() -> Optional[TransportType]:
+def get_preferred_transport() -> Optional[TransportProtocol]:
     """
     Get the preferred transport type.
 
@@ -126,7 +123,7 @@ def get_preferred_transport() -> Optional[TransportType]:
     return _preferred_transport
 
 
-def set_disabled_transports(transports: List[TransportType]):
+def set_disabled_transports(transports: List[TransportProtocol]):
     """
     Set list of disabled transport types.
 
@@ -137,7 +134,7 @@ def set_disabled_transports(transports: List[TransportType]):
     _disabled_transports = transports.copy()
 
 
-def get_disabled_transports() -> List[TransportType]:
+def get_disabled_transports() -> List[TransportProtocol]:
     """
     Get list of disabled transport types.
 
@@ -151,7 +148,7 @@ def get_disabled_transports() -> List[TransportType]:
     return _disabled_transports.copy()
 
 
-def is_transport_enabled(transport_type: TransportType) -> bool:
+def is_transport_enabled(transport_type: TransportProtocol) -> bool:
     """
     Check if a transport type is enabled.
 
@@ -164,7 +161,7 @@ def is_transport_enabled(transport_type: TransportType) -> bool:
     return transport_type not in get_disabled_transports()
 
 
-def set_required_transports(transports: Optional[List[TransportType]]):
+def set_required_transports(transports: Optional[List[TransportProtocol]]):
     """
     Set list of required transport types for strict selection.
 
@@ -178,7 +175,7 @@ def set_required_transports(transports: Optional[List[TransportType]]):
         _required_transports = transports.copy()
 
 
-def get_required_transports() -> Optional[List[TransportType]]:
+def get_required_transports() -> Optional[List[TransportProtocol]]:
     """
     Get list of required transport types for strict selection.
 
@@ -191,7 +188,7 @@ def get_required_transports() -> Optional[List[TransportType]]:
     return None if _required_transports is None else _required_transports.copy()
 
 
-def is_transport_required(transport_type: TransportType) -> bool:
+def is_transport_required(transport_type: TransportProtocol) -> bool:
     """
     Check if a transport is within the required set (if any).
 
@@ -202,7 +199,7 @@ def is_transport_required(transport_type: TransportType) -> bool:
     return True if required is None else transport_type in required
 
 
-def set_transport_specific_config(transport_type: TransportType, config: Dict[str, str]):
+def set_transport_specific_config(transport_type: TransportProtocol, config: Dict[str, str]):
     """
     Set transport-specific configuration.
 
@@ -214,7 +211,7 @@ def set_transport_specific_config(transport_type: TransportType, config: Dict[st
     _transport_specific_config[transport_type.value] = config.copy()
 
 
-def get_transport_specific_config(transport_type: TransportType) -> Dict[str, str]:
+def get_transport_specific_config(transport_type: TransportProtocol) -> Dict[str, str]:
     """
     Get transport-specific configuration.
 
@@ -269,16 +266,16 @@ def get_transport_capabilities() -> Dict[str, bool]:
         Dictionary of capability flags
     """
     return {
-        "jsonrpc_enabled": is_transport_enabled(TransportType.JSON_RPC),
-        "grpc_enabled": is_transport_enabled(TransportType.GRPC),
-        "rest_enabled": is_transport_enabled(TransportType.REST),
+        "jsonrpc_enabled": is_transport_enabled(TransportProtocol.jsonrpc),
+        "grpc_enabled": is_transport_enabled(TransportProtocol.grpc),
+        "rest_enabled": is_transport_enabled(TransportProtocol.http_json),
         "equivalence_testing_enabled": is_transport_equivalence_testing_enabled(),
         "preferred_transport": get_preferred_transport().value if get_preferred_transport() else None,
         "selection_strategy": get_transport_selection_strategy(),
     }
 
 
-def _parse_transport_from_env(transport_str: str) -> Optional[TransportType]:
+def _parse_transport_from_env(transport_str: str) -> Optional[TransportProtocol]:
     """
     Parse transport type from environment variable string.
 
@@ -286,19 +283,19 @@ def _parse_transport_from_env(transport_str: str) -> Optional[TransportType]:
         transport_str: Transport string from environment
 
     Returns:
-        TransportType or None if invalid
+        TransportProtocol or None if invalid
     """
     transport_map = {
-        "jsonrpc": TransportType.JSON_RPC,
-        "json-rpc": TransportType.JSON_RPC,
-        "grpc": TransportType.GRPC,
-        "rest": TransportType.REST,
-        "http": TransportType.REST,
+        "jsonrpc": TransportProtocol.jsonrpc,
+        "json-rpc": TransportProtocol.jsonrpc,
+        "grpc": TransportProtocol.grpc,
+        "rest": TransportProtocol.http_json,
+        "http": TransportProtocol.http_json,
     }
     return transport_map.get(transport_str.lower())
 
 
-def _parse_transport_list_from_env(transport_list_str: str) -> List[TransportType]:
+def _parse_transport_list_from_env(transport_list_str: str) -> List[TransportProtocol]:
     """
     Parse list of transport types from environment variable.
 
@@ -306,7 +303,7 @@ def _parse_transport_list_from_env(transport_list_str: str) -> List[TransportTyp
         transport_list_str: Comma-separated transport list
 
     Returns:
-        List of TransportType enums
+        List of TransportProtocol enums
     """
     transports = []
     for transport_str in transport_list_str.split(","):

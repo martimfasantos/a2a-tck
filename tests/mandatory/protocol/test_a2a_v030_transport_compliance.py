@@ -12,13 +12,14 @@ import logging
 import pytest
 from typing import Dict, Any
 
+from a2a.client import Client
 from tests.validators.a2a_v030_compliance import (
     TransportComplianceValidator,
     MethodMappingValidator,
     validate_a2a_v030_compliance,
 )
 from tests.markers import mandatory_protocol
-from tck.transport import TransportType
+from a2a.types import TransportProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ def test_transport_compliance_validation(sut_client):
 
 
 @mandatory_protocol
-def test_required_method_availability(sut_client):
+def test_required_method_availability(sut_client: Client):
     """
     MANDATORY: A2A v0.3.0 §3.2 - Required Method Implementation
 
@@ -106,17 +107,17 @@ def test_transport_specific_features(sut_client):
     assert len(features) > 0, f"Transport {transport_type.value} must declare transport-specific features"
 
     # Validate transport-specific requirements
-    if transport_type == TransportType.JSON_RPC:
+    if transport_type == TransportProtocol.jsonrpc:
         assert "sse_streaming" in features, "JSON-RPC transport must support Server-Sent Events streaming"
         assert "json_rpc_error_codes" in features, "JSON-RPC transport must support standard JSON-RPC error codes"
 
-    elif transport_type == TransportType.GRPC:
+    elif transport_type == TransportProtocol.grpc:
         assert "protobuf_serialization" in features, "gRPC transport must support Protocol Buffers serialization"
         assert "grpc_streaming" in features, "gRPC transport must support gRPC server streaming"
         # Verify gRPC-specific method
         assert hasattr(sut_client, "list_tasks"), "gRPC transport must implement list_tasks method"
 
-    elif transport_type == TransportType.REST:
+    elif transport_type == TransportProtocol.http_json:
         assert "http_status_codes" in features, "REST transport must support proper HTTP status codes"
         assert "rest_url_patterns" in features, "REST transport must support RESTful URL patterns"
         # Verify REST-specific method

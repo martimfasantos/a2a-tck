@@ -10,10 +10,10 @@ from unittest.mock import Mock, patch, MagicMock
 from typing import Dict, Any
 
 from tck.transport.transport_manager import TransportManager, TransportManagerError, TransportSelectionStrategy
-from tck.transport import TransportType, BaseTransportClient
+from tck.transport import TransportType, Client
 
 
-class MockTransportClient(BaseTransportClient):
+class MockTransportClient(Client):
     """Mock transport client for testing."""
 
     def __init__(self, base_url: str, transport_type: TransportType):

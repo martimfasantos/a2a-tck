@@ -8,26 +8,26 @@ Specification Reference: A2A Protocol v0.3.0 §3.4.1 - Functional Equivalence Re
 """
 
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 import uuid
 
 from tck import message_utils
-from tck.transport.base_client import BaseTransportClient
+from a2a.client.base_client import BaseClient
+from a2a.types import TransportProtocol
 
 logger = logging.getLogger(__name__)
 
-
 def transport_send_message(
-    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+    client: BaseClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Send a message using any transport client, maintaining compatibility with existing tests.
 
     This function provides a transport-agnostic wrapper that works with both new
-    BaseTransportClient implementations and legacy SUTClient patterns.
+    Client implementations and legacy SUTClient patterns.
 
     Args:
-        client: Transport client (BaseTransportClient or legacy SUTClient)
+        client: Transport client (Client or legacy SUTClient)
         message_params: Message parameters in A2A format
         extra_headers: Optional transport-specific headers
 
@@ -36,9 +36,13 @@ def transport_send_message(
 
     Specification Reference: A2A v0.3.0 §7.1 - Core Message Protocol
     """
-    # Check if client is a BaseTransportClient with send_message method
-    if hasattr(client, "send_message") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware send_message for {client.transport_type.value}")
+    # Check if client is a Client with send_message method
+    if (
+        hasattr(client, "_transport") and
+        client._transport is not None and
+        hasattr(client, "send_message")
+    ):
+        logger.debug(f"Using transport-aware send_message for {get_client_transport_type(client)}")
         message = message_params.get("message", message_params)
         try:
             result = client.send_message(message, extra_headers)
@@ -63,7 +67,7 @@ def transport_send_message(
 
 
 def transport_get_task(
-    client: BaseTransportClient,
+    client: BaseClient,
     task_id: str,
     history_length: Optional[int] = None,
     extra_headers: Optional[Dict[str, str]] = None,
@@ -82,9 +86,13 @@ def transport_get_task(
 
     Specification Reference: A2A v0.3.0 §7.3 - Task Retrieval
     """
-    # Check if client is a BaseTransportClient with get_task method
-    if hasattr(client, "get_task") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware get_task for {client.transport_type.value}")
+    # Check if client is a Client with get_task method
+    if (
+        hasattr(client, "_transport") and
+        client._transport is not None and
+        hasattr(client, "get_task")
+    ):
+        logger.debug(f"Using transport-aware get_task for {get_client_transport_type(client)}")
         try:
             result = client.get_task(task_id, history_length=history_length, extra_headers=extra_headers)
             # Check if result is already an error response
@@ -108,7 +116,7 @@ def transport_get_task(
 
 
 def transport_cancel_task(
-    client: BaseTransportClient, task_id: str, extra_headers: Optional[Dict[str, str]] = None
+    client: BaseClient, task_id: str, extra_headers: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """
     Cancel a task using any transport client.
@@ -123,9 +131,13 @@ def transport_cancel_task(
 
     Specification Reference: A2A v0.3.0 §7.4 - Task Cancellation
     """
-    # Check if client is a BaseTransportClient with cancel_task method
-    if hasattr(client, "cancel_task") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware cancel_task for {client.transport_type.value}")
+    # Check if client is a BaseClient with cancel_task method
+    if (
+        hasattr(client, "_transport") and
+        client._transport is not None and
+        hasattr(client, "cancel_task")
+    ):
+        logger.debug(f"Using transport-aware cancel_task for {get_client_transport_type(client)}")
         try:
             result = client.cancel_task(task_id, extra_headers=extra_headers)
             # Check if result is already an error response
@@ -148,7 +160,9 @@ def transport_cancel_task(
         raise ValueError(f"Client {type(client)} does not support task cancellation")
 
 
-def transport_get_agent_card(client: BaseTransportClient, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+def transport_get_agent_card(
+    client: BaseClient, extra_headers: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
     """
     Get authenticated extended agent card using any transport client.
 
@@ -161,11 +175,15 @@ def transport_get_agent_card(client: BaseTransportClient, extra_headers: Optiona
 
     Specification Reference: A2A v0.3.0 §9.1 - Authenticated Extended Agent Card
     """
-    # Check if client is a BaseTransportClient with get_authenticated_extended_card method
-    if hasattr(client, "get_authenticated_extended_card") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware get_authenticated_extended_card for {client.transport_type.value}")
+    # Check if client is a BaseClient with get_authenticated_extended_card method
+    if (
+        hasattr(client, "_transport") and
+        client._transport is not None and
+        hasattr(client, "get_card")
+    ):
+        logger.debug(f"Using transport-aware get_card for {get_client_transport_type(client)}")
         try:
-            result = client.get_authenticated_extended_card(extra_headers)
+            result = client.get_card(extra_headers)
             # Wrap result in JSON-RPC format for compatibility with existing tests
             return {"result": result}
         except Exception as e:
@@ -272,7 +290,7 @@ def extract_task_id_from_response(response: Dict[str, Any]) -> Optional[str]:
     return None
 
 
-def normalize_response_for_comparison(response: Dict[str, Any], transport_type: str) -> Dict[str, Any]:
+def normalize_response_for_comparison(response: Dict[str, Any], transport_type: TransportProtocol) -> Dict[str, Any]:
     """
     Normalize a transport response for cross-transport comparison.
 
@@ -281,7 +299,7 @@ def normalize_response_for_comparison(response: Dict[str, Any], transport_type: 
 
     Args:
         response: Response from transport
-        transport_type: Type of transport ("jsonrpc", "grpc", "rest")
+        transport_type: TransportProtocol enum indicating the transport type
 
     Returns:
         Normalized response for comparison
@@ -343,20 +361,24 @@ def generate_test_task_id(prefix: str = "test") -> str:
     return f"{prefix}-task-id-{uuid.uuid4()}"
 
 
-def is_transport_client(client: Any) -> bool:
+def is_transport_client(client: BaseClient) -> bool:
     """
-    Check if a client is a transport-aware BaseTransportClient.
+    Check if a client is a transport-aware Client.
 
     Args:
-        client: Client to check
+        client: BaseClient to check
 
     Returns:
-        True if client is a BaseTransportClient, False otherwise
+        True if client is a Client, False otherwise
     """
-    return hasattr(client, "transport_type") and hasattr(client, "send_message")
+    return (
+        hasattr(client, "_transport") 
+        and client._transport is not None
+        and hasattr(client, "send_message")
+    )
 
 
-def get_client_transport_type(client: Any) -> str:
+def get_client_transport_type(client: BaseClient) -> TransportProtocol:
     """
     Get the transport type of a client.
 
@@ -364,29 +386,18 @@ def get_client_transport_type(client: Any) -> str:
         client: Transport client
 
     Returns:
-        Transport type string ("jsonrpc", "grpc", "rest", or "unknown")
+        TransportProtocol enum indicating the transport type
     """
-    if hasattr(client, "transport_type"):
-        # Handle both enum and string transport types
-        if hasattr(client.transport_type, "value"):
-            return client.transport_type.value.lower()
-        else:
-            return str(client.transport_type).lower()
-
-    # Fallback detection based on class name or methods
-    client_class_name = type(client).__name__.lower()
-    if "jsonrpc" in client_class_name or "sut" in client_class_name:
-        return "jsonrpc"
-    elif "grpc" in client_class_name:
-        return "grpc"
-    elif "rest" in client_class_name or "http" in client_class_name:
-        return "rest"
-    else:
-        return "unknown"
+    if client._transport.__class__.__name__ == "JsonRpcTransport":
+        return TransportProtocol.jsonrpc
+    elif client._transport.__class__.__name__ == "GrpcTransport":
+        return TransportProtocol.grpc
+    elif client._transport.__class__.__name__ == "RestTransport":
+        return TransportProtocol.http_json
 
 
 def transport_send_json_rpc_request(
-    client: BaseTransportClient, method: str, params: Optional[Dict[str, Any]] = None, id: Optional[str] = None
+    client: BaseClient, method: str, params: Optional[Dict[str, Any]] = None, id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Send a raw JSON-RPC request using any transport client.
@@ -424,199 +435,14 @@ def transport_send_json_rpc_request(
     else:
         raise ValueError(f"Client {type(client)} does not support arbitrary JSON-RPC requests")
 
-
-def transport_set_push_notification_config(
-    client: BaseTransportClient, task_id: str, config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
-) -> Dict[str, Any]:
-    """
-    Set push notification configuration for a task using any transport client.
-
-    Args:
-        client: Transport client
-        task_id: Task identifier
-        config: Push notification configuration
-        extra_headers: Optional transport-specific headers
-
-    Returns:
-        Response from the server in JSON-RPC format for compatibility
-
-    Specification Reference: A2A v0.3.0 §7.5 - Push Notification Configuration
-    """
-    # Check if client is a BaseTransportClient with push notification methods
-    if hasattr(client, "set_push_notification_config") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware set_push_notification_config for {client.transport_type.value}")
-        try:
-            result = client.set_push_notification_config(task_id, config, extra_headers=extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
-            return {"result": result}
-        except Exception as e:
-            # Convert transport exceptions to JSON-RPC error format
-            logger.debug(f"Transport error: {e}")
-            # Try to extract A2A error details from TransportError
-            if hasattr(e, "a2a_error") and e.a2a_error:
-                return {"error": e.a2a_error}
-            # Try to extract error details from legacy transport exception
-            elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
-                return {"error": e.json_rpc_error}
-            return {"error": {"code": -32603, "message": str(e)}}
-
-    else:
-        raise ValueError(f"Client {type(client)} does not support push notification configuration")
-
-
-def transport_get_push_notification_config(
-    client: BaseTransportClient, task_id: str, config_id: str = "default", extra_headers: Optional[Dict[str, str]] = None
-) -> Dict[str, Any]:
-    """
-    Get push notification configuration for a task using any transport client.
-
-    Args:
-        client: Transport client
-        task_id: Task identifier
-        config_id: Configuration identifier
-        extra_headers: Optional transport-specific headers
-
-    Returns:
-        Response from the server in JSON-RPC format for compatibility
-
-    Specification Reference: A2A v0.3.0 §7.6 - Push Notification Configuration
-    """
-    # Check if client is a BaseTransportClient with push notification methods
-    if hasattr(client, "get_push_notification_config") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware get_push_notification_config for {client.transport_type.value}")
-        try:
-            result = client.get_push_notification_config(task_id, config_id, extra_headers=extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
-            return {"result": result}
-        except Exception as e:
-            # Convert transport exceptions to JSON-RPC error format
-            logger.debug(f"Transport error: {e}")
-            # Try to extract A2A error details from TransportError
-            if hasattr(e, "a2a_error") and e.a2a_error:
-                return {"error": e.a2a_error}
-            # Try to extract error details from legacy transport exception
-            elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
-                return {"error": e.json_rpc_error}
-            return {"error": {"code": -32603, "message": str(e)}}
-
-    else:
-        raise ValueError(f"Client {type(client)} does not support push notification configuration")
-
-
-def transport_list_push_notification_configs(
-    client: BaseTransportClient, task_id: str, extra_headers: Optional[Dict[str, str]] = None
-) -> Dict[str, Any]:
-    """
-    List push notification configurations for a task using any transport client.
-
-    Args:
-        client: Transport client
-        task_id: Task identifier
-        extra_headers: Optional transport-specific headers
-
-    Returns:
-        Response from the server in JSON-RPC format for compatibility
-
-    Specification Reference: A2A v0.3.0 §7.7 - Push Notification Configuration
-    """
-    # Check if client is a BaseTransportClient with push notification methods
-    if hasattr(client, "list_push_notification_configs") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware list_push_notification_configs for {client.transport_type.value}")
-        try:
-            result = client.list_push_notification_configs(task_id, extra_headers=extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
-            return {"result": result}
-        except Exception as e:
-            # Convert transport exceptions to JSON-RPC error format
-            logger.debug(f"Transport error: {e}")
-            # Try to extract A2A error details from TransportError
-            if hasattr(e, "a2a_error") and e.a2a_error:
-                return {"error": e.a2a_error}
-            # Try to extract error details from legacy transport exception
-            elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
-                return {"error": e.json_rpc_error}
-            return {"error": {"code": -32603, "message": str(e)}}
-
-    else:
-        raise ValueError(f"Client {type(client)} does not support push notification configuration")
-
-
-def transport_delete_push_notification_config(
-    client: BaseTransportClient, task_id: str, config_id: str, extra_headers: Optional[Dict[str, str]] = None
-) -> Dict[str, Any]:
-    """
-    Delete push notification configuration for a task using any transport client.
-
-    Args:
-        client: Transport client
-        task_id: Task identifier
-        config_id: Configuration identifier
-        extra_headers: Optional transport-specific headers
-
-    Returns:
-        Response from the server in JSON-RPC format for compatibility
-
-    Specification Reference: A2A v0.3.0 §7.8 - Push Notification Configuration
-    """
-    # Check if client is a BaseTransportClient with push notification methods
-    if hasattr(client, "delete_push_notification_config") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware delete_push_notification_config for {client.transport_type.value}")
-        try:
-            result = client.delete_push_notification_config(task_id, config_id, extra_headers=extra_headers)
-            # Wrap result in JSON-RPC format for compatibility with existing tests
-            return {"result": result}
-        except Exception as e:
-            # Convert transport exceptions to JSON-RPC error format
-            logger.debug(f"Transport error: {e}")
-            # Try to extract A2A error details from TransportError
-            if hasattr(e, "a2a_error") and e.a2a_error:
-                return {"error": e.a2a_error}
-            # Try to extract error details from legacy transport exception
-            elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
-                return {"error": e.json_rpc_error}
-            return {"error": {"code": -32603, "message": str(e)}}
-
-    else:
-        raise ValueError(f"Client {type(client)} does not support push notification configuration")
-
-
-def transport_send_streaming_message(
-    client: BaseTransportClient, message_params: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
-) -> Any:
-    """
-    Send a message with streaming response using any transport client.
-
-    Args:
-        client: Transport client (BaseTransportClient)
-        message_params: Message parameters in A2A format
-        extra_headers: Optional transport-specific headers
-
-    Returns:
-        Stream object that yields task updates (transport-specific type)
-
-    Raises:
-        ValueError: If client doesn't support streaming
-        TransportError: If streaming message sending fails
-
-    Specification Reference: A2A v0.3.0 §8.1 - Streaming Support
-    """
-    # Check if client is a BaseTransportClient with streaming support
-    if hasattr(client, "send_streaming_message") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware send_streaming_message for {client.transport_type.value}")
-        message = message_params.get("message", message_params)
-        return client.send_streaming_message(message, extra_headers)
-    else:
-        raise ValueError(f"Client {type(client)} does not support streaming message sending")
-
-
-def transport_resubscribe_task(
-    client: BaseTransportClient, task_id: str, extra_headers: Optional[Dict[str, str]] = None
+def transport_resubscribe(
+    client: BaseClient, task_id: str, extra_headers: Optional[Dict[str, str]] = None
 ) -> Any:
     """
     Resubscribe to task updates using any transport client.
 
     Args:
-        client: Transport client (BaseTransportClient)
+        client: Transport client (BaseClient)
         task_id: Task identifier to resubscribe to
         extra_headers: Optional transport-specific headers
 
@@ -629,9 +455,104 @@ def transport_resubscribe_task(
 
     Specification Reference: A2A v0.3.0 §7.9 - Task Resubscription
     """
-    # Check if client is a BaseTransportClient with resubscription support
-    if hasattr(client, "resubscribe_task") and hasattr(client, "transport_type"):
-        logger.debug(f"Using transport-aware resubscribe_task for {client.transport_type.value}")
-        return client.resubscribe_task(task_id, extra_headers)
+    if (
+        hasattr(client, "_config") and
+        client._config is not None and
+        hasattr(client, "resubscribe")
+    ):
+        logger.debug(f"Using transport-aware resubscribe_task for {get_client_transport_type(client).value}")
+        return client.resubscribe(task_id, extra_headers)
     else:
         raise ValueError(f"Client {type(client)} does not support task resubscription")
+
+
+def transport_set_task_callback(
+    client: BaseClient, task_id: str, callback_config: Dict[str, Any], extra_headers: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
+    """
+    Set task callback configuration using any transport client.
+
+    Args:
+        client: Transport client (BaseClient)
+        task_id: Task identifier
+        callback_config: Callback configuration to set
+        extra_headers: Optional transport-specific headers
+
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+
+    Specification Reference: A2A v0.3.0 §7.10 - Task Callbacks
+    """
+    # Check if client is a BaseClient with set_task_callback method
+    if (
+        hasattr(client, "_transport") and
+        client._transport is not None and
+        hasattr(client, "set_task_callback")
+    ):
+        logger.debug(f"Using transport-aware set_task_callback for {get_client_transport_type(client).value}")
+        try:
+            result = client.set_task_callback(task_id, callback_config, extra_headers=extra_headers)
+            # Check if result is already an error response
+            if isinstance(result, dict) and "error" in result:
+                return result  # Return error response as-is
+            # Wrap success result in JSON-RPC format for compatibility with existing tests
+            return {"result": result}
+        except Exception as e:
+            # Convert transport exceptions to JSON-RPC error format
+            logger.debug(f"Transport error: {e}")
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, "a2a_error") and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
+            return {"error": {"code": -32603, "message": str(e)}}
+
+    else:
+        raise ValueError(f"Client {type(client)} does not support task callback configuration")
+
+
+def transport_get_task_callback(
+    client: BaseClient, task_id: str, callback_id: str = "default", extra_headers: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
+    """
+    Get task callback configuration using any transport client.
+
+    Args:
+        client: Transport client (BaseClient)
+        task_id: Task identifier
+        callback_id: Callback configuration identifier
+        extra_headers: Optional transport-specific headers
+
+    Returns:
+        Response from the server in JSON-RPC format for compatibility
+
+    Specification Reference: A2A v0.3.0 §7.10 - Task Callbacks
+    """
+    # Check if client is a BaseClient with get_task_callback method
+    if (
+        hasattr(client, "_transport") and
+        client._transport is not None and
+        hasattr(client, "get_task_callback")
+    ):
+        logger.debug(f"Using transport-aware get_task_callback for {get_client_transport_type(client).value}")
+        try:
+            result = client.get_task_callback(task_id, callback_id, extra_headers=extra_headers)
+            # Check if result is already an error response
+            if isinstance(result, dict) and "error" in result:
+                return result  # Return error response as-is
+            # Wrap success result in JSON-RPC format for compatibility with existing tests
+            return {"result": result}
+        except Exception as e:
+            # Convert transport exceptions to JSON-RPC error format
+            logger.debug(f"Transport error: {e}")
+            # Try to extract A2A error details from TransportError
+            if hasattr(e, "a2a_error") and e.a2a_error:
+                return {"error": e.a2a_error}
+            # Try to extract error details from legacy transport exception
+            elif hasattr(e, "json_rpc_error") and e.json_rpc_error:
+                return {"error": e.json_rpc_error}
+            return {"error": {"code": -32603, "message": str(e)}}
+
+    else:
+        raise ValueError(f"Client {type(client)} does not support task callback retrieval")

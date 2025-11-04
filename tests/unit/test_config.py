@@ -10,7 +10,7 @@ import pytest
 from unittest.mock import patch
 
 import tck.config as config
-from tck.transport import TransportType
+from a2a.types import TransportProtocol
 
 
 @pytest.mark.core
@@ -73,8 +73,8 @@ class TestTransportConfiguration:
         assert config.get_preferred_transport() is None
 
         # Test setting preferred transport
-        config.set_preferred_transport(TransportType.GRPC)
-        assert config.get_preferred_transport() == TransportType.GRPC
+        config.set_preferred_transport(TransportProtocol.grpc)
+        assert config.get_preferred_transport() == TransportProtocol.grpc
 
         # Test clearing preferred transport
         config.set_preferred_transport(None)
@@ -83,13 +83,13 @@ class TestTransportConfiguration:
     def test_preferred_transport_from_env(self):
         """Test preferred transport from environment."""
         with patch.dict(os.environ, {"A2A_PREFERRED_TRANSPORT": "grpc"}):
-            assert config.get_preferred_transport() == TransportType.GRPC
+            assert config.get_preferred_transport() == TransportProtocol.grpc
 
         with patch.dict(os.environ, {"A2A_PREFERRED_TRANSPORT": "jsonrpc"}):
-            assert config.get_preferred_transport() == TransportType.JSON_RPC
+            assert config.get_preferred_transport() == TransportProtocol.jsonrpc
 
         with patch.dict(os.environ, {"A2A_PREFERRED_TRANSPORT": "rest"}):
-            assert config.get_preferred_transport() == TransportType.REST
+            assert config.get_preferred_transport() == TransportProtocol.http_json
 
     def test_disabled_transports(self):
         """Test disabled transports configuration."""
@@ -97,34 +97,34 @@ class TestTransportConfiguration:
         assert config.get_disabled_transports() == []
 
         # Test setting disabled transports
-        disabled = [TransportType.GRPC, TransportType.REST]
+        disabled = [TransportProtocol.grpc, TransportProtocol.http_json]
         config.set_disabled_transports(disabled)
         assert config.get_disabled_transports() == disabled
 
         # Test transport enabled/disabled check
-        assert config.is_transport_enabled(TransportType.JSON_RPC) is True
-        assert config.is_transport_enabled(TransportType.GRPC) is False
-        assert config.is_transport_enabled(TransportType.REST) is False
+        assert config.is_transport_enabled(TransportProtocol.jsonrpc) is True
+        assert config.is_transport_enabled(TransportProtocol.grpc) is False
+        assert config.is_transport_enabled(TransportProtocol.http_json) is False
 
     def test_disabled_transports_from_env(self):
         """Test disabled transports from environment."""
         with patch.dict(os.environ, {"A2A_DISABLED_TRANSPORTS": "grpc,rest"}):
             disabled = config.get_disabled_transports()
-            assert TransportType.GRPC in disabled
-            assert TransportType.REST in disabled
-            assert TransportType.JSON_RPC not in disabled
+            assert TransportProtocol.grpc in disabled
+            assert TransportProtocol.http_json in disabled
+            assert TransportProtocol.jsonrpc not in disabled
 
     def test_transport_specific_config(self):
         """Test transport-specific configuration."""
         # Test setting and getting config
         grpc_config = {"timeout": "30", "compression": "gzip"}
-        config.set_transport_specific_config(TransportType.GRPC, grpc_config)
+        config.set_transport_specific_config(TransportProtocol.grpc, grpc_config)
 
-        retrieved_config = config.get_transport_specific_config(TransportType.GRPC)
+        retrieved_config = config.get_transport_specific_config(TransportProtocol.grpc)
         assert retrieved_config == grpc_config
 
         # Test empty config for unconfigured transport
-        rest_config = config.get_transport_specific_config(TransportType.REST)
+        rest_config = config.get_transport_specific_config(TransportProtocol.http_json)
         assert rest_config == {}
 
     def test_transport_specific_config_from_env(self):
@@ -132,11 +132,11 @@ class TestTransportConfiguration:
         env_vars = {"A2A_GRPC_TIMEOUT": "60", "A2A_GRPC_COMPRESSION": "deflate", "A2A_REST_AUTH_HEADER": "Bearer token123"}
 
         with patch.dict(os.environ, env_vars):
-            grpc_config = config.get_transport_specific_config(TransportType.GRPC)
+            grpc_config = config.get_transport_specific_config(TransportProtocol.grpc)
             assert grpc_config["timeout"] == "60"
             assert grpc_config["compression"] == "deflate"
 
-            rest_config = config.get_transport_specific_config(TransportType.REST)
+            rest_config = config.get_transport_specific_config(TransportProtocol.http_json)
             assert rest_config["auth_header"] == "Bearer token123"
 
     def test_transport_equivalence_testing(self):
@@ -171,8 +171,8 @@ class TestTransportConfiguration:
     def test_transport_capabilities(self):
         """Test transport capabilities summary."""
         # Set up test configuration
-        config.set_preferred_transport(TransportType.GRPC)
-        config.set_disabled_transports([TransportType.REST])
+        config.set_preferred_transport(TransportProtocol.grpc)
+        config.set_disabled_transports([TransportProtocol.http_json])
         config.set_transport_selection_strategy("prefer_grpc")
         config.set_enable_transport_equivalence_testing(True)
 
@@ -189,10 +189,10 @@ class TestTransportConfiguration:
         """Test resetting transport configuration."""
         # Change all settings
         config.set_transport_selection_strategy("prefer_rest")
-        config.set_preferred_transport(TransportType.REST)
-        config.set_disabled_transports([TransportType.GRPC])
+        config.set_preferred_transport(TransportProtocol.http_json)
+        config.set_disabled_transports([TransportProtocol.grpc])
         config.set_enable_transport_equivalence_testing(False)
-        config.set_transport_specific_config(TransportType.JSON_RPC, {"test": "value"})
+        config.set_transport_specific_config(TransportProtocol.jsonrpc, {"test": "value"})
 
         # Reset and verify defaults
         config.reset_transport_config()
@@ -201,7 +201,7 @@ class TestTransportConfiguration:
         assert config.get_preferred_transport() is None
         assert config.get_disabled_transports() == []
         assert config.is_transport_equivalence_testing_enabled() is True
-        assert config.get_transport_specific_config(TransportType.JSON_RPC) == {}
+        assert config.get_transport_specific_config(TransportProtocol.jsonrpc) == {}
 
 
 @pytest.mark.core
@@ -211,15 +211,15 @@ class TestTransportParsing:
     def test_parse_transport_from_env(self):
         """Test parsing transport from environment string."""
         # Test valid transports
-        assert config._parse_transport_from_env("jsonrpc") == TransportType.JSON_RPC
-        assert config._parse_transport_from_env("json-rpc") == TransportType.JSON_RPC
-        assert config._parse_transport_from_env("grpc") == TransportType.GRPC
-        assert config._parse_transport_from_env("rest") == TransportType.REST
-        assert config._parse_transport_from_env("http") == TransportType.REST
+        assert config._parse_transport_from_env("jsonrpc") == TransportProtocol.jsonrpc
+        assert config._parse_transport_from_env("json-rpc") == TransportProtocol.jsonrpc
+        assert config._parse_transport_from_env("grpc") == TransportProtocol.grpc
+        assert config._parse_transport_from_env("rest") == TransportProtocol.http_json
+        assert config._parse_transport_from_env("http") == TransportProtocol.http_json
 
         # Test case insensitive
-        assert config._parse_transport_from_env("GRPC") == TransportType.GRPC
-        assert config._parse_transport_from_env("Rest") == TransportType.REST
+        assert config._parse_transport_from_env("GRPC") == TransportProtocol.grpc
+        assert config._parse_transport_from_env("Rest") == TransportProtocol.http_json
 
         # Test invalid transport
         assert config._parse_transport_from_env("invalid") is None
@@ -228,11 +228,11 @@ class TestTransportParsing:
         """Test parsing transport list from environment string."""
         # Test single transport
         transports = config._parse_transport_list_from_env("grpc")
-        assert transports == [TransportType.GRPC]
+        assert transports == [TransportProtocol.grpc]
 
         # Test multiple transports
         transports = config._parse_transport_list_from_env("jsonrpc,grpc,rest")
-        expected = [TransportType.JSON_RPC, TransportType.GRPC, TransportType.REST]
+        expected = [TransportProtocol.jsonrpc, TransportProtocol.grpc, TransportProtocol.http_json]
         assert transports == expected
 
         # Test with spaces
@@ -241,7 +241,7 @@ class TestTransportParsing:
 
         # Test with invalid transport (should be filtered out)
         transports = config._parse_transport_list_from_env("jsonrpc,invalid,grpc")
-        assert transports == [TransportType.JSON_RPC, TransportType.GRPC]
+        assert transports == [TransportProtocol.jsonrpc, TransportProtocol.grpc]
 
         # Test empty string
         transports = config._parse_transport_list_from_env("")

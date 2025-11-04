@@ -11,7 +11,7 @@ import requests
 from unittest.mock import Mock
 
 from tck import agent_card_utils
-from tck.transport.base_client import TransportProtocol
+from a2a.types import TransportProtocol
 
 # Import the core marker
 pytestmark = pytest.mark.core
@@ -88,8 +88,8 @@ class TestTransportDiscovery:
 
         assert len(transports) == 3
         assert TransportProtocol.jsonrpc in transports
-        assert TransportProtocol.GRPC in transports
-        assert TransportProtocol.REST in transports
+        assert TransportProtocol.grpc in transports
+        assert TransportProtocol.http_json in transports
 
     def test_get_supported_transports_empty(self):
         """Test getting supported transports when none declared."""
@@ -105,7 +105,7 @@ class TestTransportDiscovery:
 
         preferred = agent_card_utils.get_preferred_transport(agent_card)
 
-        assert preferred == TransportProtocol.GRPC
+        assert preferred == TransportProtocol.grpc
 
     def test_get_preferred_transport_none(self):
         """Test getting preferred transport when none specified."""
@@ -141,8 +141,8 @@ class TestTransportEndpoints:
 
         expected = {
             TransportProtocol.jsonrpc: "https://example.com/jsonrpc",
-            TransportProtocol.GRPC: "https://example.com:9090",
-            TransportProtocol.REST: "https://example.com/api/v1",
+            TransportProtocol.grpc: "https://example.com:9090",
+            TransportProtocol.http_json: "https://example.com/api/v1",
         }
         assert endpoints == expected
 
@@ -161,11 +161,11 @@ class TestTransportEndpoints:
         assert jsonrpc_info == {"transport": "jsonrpc", "endpoint": "https://example.com/jsonrpc", "preferred": True}
 
         # Test additional interface
-        grpc_info = agent_card_utils.get_transport_interface_info(agent_card, TransportProtocol.GRPC)
+        grpc_info = agent_card_utils.get_transport_interface_info(agent_card, TransportProtocol.grpc)
         assert grpc_info == {"transport": "grpc", "endpoint": "https://example.com:9090", "metadata": {"compression": "gzip"}}
 
         # Test non-existent transport
-        rest_info = agent_card_utils.get_transport_interface_info(agent_card, TransportProtocol.REST)
+        rest_info = agent_card_utils.get_transport_interface_info(agent_card, TransportProtocol.http_json)
         assert rest_info is None
 
 
@@ -186,7 +186,7 @@ class TestTransportProtocolParsing:
 
         for name in test_cases:
             result = agent_card_utils._parse_transport_type(name)
-            assert result == TransportProtocol.GRPC, f"Failed for: {name}"
+            assert result == TransportProtocol.grpc, f"Failed for: {name}"
 
     def test_parse_transport_type_rest_variants(self):
         """Test parsing various REST transport names."""
@@ -194,7 +194,7 @@ class TestTransportProtocolParsing:
 
         for name in test_cases:
             result = agent_card_utils._parse_transport_type(name)
-            assert result == TransportProtocol.REST, f"Failed for: {name}"
+            assert result == TransportProtocol.http_json, f"Failed for: {name}"
 
     def test_parse_transport_type_unknown(self):
         """Test parsing unknown transport names."""
@@ -212,8 +212,8 @@ class TestTransportProtocolParsing:
         }
 
         assert agent_card_utils.has_transport_support(agent_card, TransportProtocol.jsonrpc)
-        assert agent_card_utils.has_transport_support(agent_card, TransportProtocol.GRPC)
-        assert not agent_card_utils.has_transport_support(agent_card, TransportProtocol.REST)
+        assert agent_card_utils.has_transport_support(agent_card, TransportProtocol.grpc)
+        assert not agent_card_utils.has_transport_support(agent_card, TransportProtocol.http_json)
 
 
 class TestTransportValidation:

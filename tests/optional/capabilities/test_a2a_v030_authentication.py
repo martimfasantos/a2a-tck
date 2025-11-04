@@ -17,7 +17,7 @@ import json
 from tests.markers import optional_capability, a2a_v030
 from tests.utils.transport_helpers import transport_get_agent_card, is_transport_client, get_client_transport_type
 from tck import config, message_utils
-from tck.transport.base_client import BaseTransportClient
+from a2a.client import Client
 
 logger = logging.getLogger(__name__)
 

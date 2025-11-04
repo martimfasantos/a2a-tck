@@ -168,11 +168,10 @@ def test_consistent_behavior_message_send(all_transport_clients, sample_message)
             continue
 
         # Extract and normalize the response for comparison
-        transport_name = transport_type.value
-        normalized = normalize_response_for_comparison(resp, transport_name)
+        normalized = normalize_response_for_comparison(resp, transport_type)
 
         results.append(normalized)
-        transport_types.append(transport_name)
+        transport_types.append(transport_type.value)
 
     if len(results) < 2:
         pytest.skip("Need at least 2 successful responses for behavior comparison")
@@ -242,11 +241,10 @@ def test_consistent_behavior_tasks_get(all_transport_clients, test_task_data):
             continue
 
         # Extract and normalize the response
-        transport_name = transport_type.value
-        normalized = normalize_response_for_comparison(resp, transport_name)
+        normalized = normalize_response_for_comparison(resp, transport_type)
 
         results.append(normalized)
-        transport_types.append(transport_name)
+        transport_types.append(transport_type.value)
 
     if len(results) < 2:
         pytest.skip("Need at least 2 successful task retrievals for equivalence testing")
@@ -354,11 +352,10 @@ def test_consistent_behavior_tasks_cancel(all_transport_clients, test_task_data)
             continue
 
         # Extract and normalize the response
-        transport_name = transport_type.value
-        normalized = normalize_response_for_comparison(resp, transport_name)
+        normalized = normalize_response_for_comparison(resp, transport_type)
 
         results.append(normalized)
-        transport_types.append(transport_name)
+        transport_types.append(transport_type.value)
 
     if len(results) < 2:
         pytest.skip("Need at least 2 successful task cancellations for equivalence testing")
@@ -712,11 +709,10 @@ def test_equivalent_authentication_agent_card(all_transport_clients):
             continue
 
         # Extract and normalize the response
-        transport_name = transport_type.value
-        normalized = normalize_response_for_comparison(resp, transport_name)
+        normalized = normalize_response_for_comparison(resp, transport_type)
 
         results.append(normalized)
-        transport_types.append(transport_name)
+        transport_types.append(transport_type.value)
 
     if len(results) < 2:
         pytest.skip("Need at least 2 agent card responses for equivalence testing")
@@ -954,11 +950,10 @@ def test_streaming_response_equivalence(all_transport_clients, sample_message):
 
             # For this test, we collect the initial response structure
             # In a real implementation, we'd need to handle the streaming nature properly
-            transport_name = transport_type.value
-            normalized = normalize_response_for_comparison(resp, transport_name)
+            normalized = normalize_response_for_comparison(resp, transport_type)
 
             streaming_responses.append(normalized)
-            transport_types.append(transport_name)
+            transport_types.append(transport_type.value)
 
         except Exception as e:
             # Skip transports that don't support streaming or have issues

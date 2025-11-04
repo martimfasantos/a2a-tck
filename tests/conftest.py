@@ -1,10 +1,15 @@
 import os
 import pytest
 import tck.config
-import requests
 import uuid
 import logging
+from typing import Dict, Any
+
+from a2a.types import TransportProtocol
+from a2a.client.base_client import BaseClient
+
 from tck import agent_card_utils
+from tck.transport.transport_manager import TransportManager
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +70,12 @@ def pytest_configure(config):
 
     # Required transports (strict mode)
     if required_transports:
-        from tck.transport.base_client import TransportProtocol
 
-        transport_map = {"jsonrpc": TransportProtocol.jsonrpc, "grpc": TransportProtocol.GRPC, "rest": TransportProtocol.REST}
+        transport_map = {
+            "jsonrpc": TransportProtocol.jsonrpc,
+            "grpc": TransportProtocol.grpc,
+            "rest": TransportProtocol.http_json
+        }
         allow_list = []
         for transport_name in required_transports.split(","):
             name = transport_name.strip().lower()
@@ -80,26 +88,12 @@ def pytest_configure(config):
 
 
 @pytest.fixture(scope="session")
-def agent_card_data(request):
-    """
-    Pytest fixture to fetch the Agent Card data.
-    Skips fetching if --skip-agent-card is provided.
-    """
-    if request.config.getoption("--skip-agent-card"):
-        print("Skipping Agent Card fetch due to --skip-agent-card flag.")
-        return None
-
-    sut_url = request.config.getoption("--sut-url") or os.getenv("SUT_URL")
-    if not sut_url:
-        # This case should ideally be caught earlier, but as a fallback:
-        pytest.fail("SUT URL not provided. Cannot fetch Agent Card.")
-
-    # Use a session to potentially reuse connections
-    with requests.Session() as session:
-        card = agent_card_utils.fetch_agent_card(sut_url) 
-        if card is None:
-            pytest.fail("Failed to fetch or parse Agent Card from the SUT. Check SUT URL and Agent Card endpoint.")
-        return card
+async def agent_card_data(request) -> Dict[str, Any]:
+    sut_url = request.config.getoption("--sut-url")
+    card = await agent_card_utils.fetch_agent_card(sut_url)
+    if card is None:
+        pytest.fail("Failed to fetch or parse Agent Card from the SUT. Check SUT URL and Agent Card endpoint.")
+    return card.model_dump()
 
 
 def pytest_generate_tests(metafunc):
@@ -237,27 +231,27 @@ def transport_manager(request):
 
 
 @pytest.fixture(scope="function")
-def sut_client(transport_manager, request):
+def sut_client(transport_manager: TransportManager, request) -> BaseClient:
     """
     Provide a transport client for testing based on configuration.
 
     This fixture replaces the legacy SUTClient fixture with a transport-aware
     implementation that supports A2A v0.3.0 multi-transport architecture.
-    The client returned implements the BaseTransportClient interface and can
+    The client returned implements the Client interface and can
     be used with any supported transport (JSON-RPC, gRPC, REST).
 
     For backward compatibility, if only JSON-RPC is available or configured,
     this returns a client that maintains the same interface as the legacy SUTClient.
 
     Returns:
-        BaseTransportClient: A transport client (JSONRPCClient, GRPCClient, or RESTClient)
+        BaseClient: A transport client (Base Client from a2a-python SDK)
 
     Specification Reference: A2A v0.3.0 §3.2 - Transport Protocols
     """
     try:
         # Get the appropriate transport client based on configuration
         # Use None to let TransportManager select based on strategy
-        client = transport_manager.get_transport_client()
+        client: BaseClient = transport_manager.get_transport_client()
         if client is None:
             pytest.fail("No transport client available. Check SUT transport configuration.")
 
@@ -277,7 +271,7 @@ def all_transport_clients(transport_manager, request):
     transport protocols. Used primarily for transport equivalence testing.
 
     Returns:
-        Dict[TransportProtocol, BaseTransportClient]: Map of transport types to clients
+        Dict[TransportProtocol, Client]: Map of transport types to clients
 
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence Requirements
     """
@@ -301,7 +295,7 @@ def multi_transport_sut(transport_manager, request):
     protocols. It skips automatically if the SUT only supports a single transport.
 
     Returns:
-        Dict[TransportProtocol, BaseTransportClient]: Map of available transport clients
+        Dict[TransportProtocol, Client]: Map of available transport clients
 
     Specification Reference: A2A v0.3.0 §3.4.1 - Functional Equivalence for Multi-Transport SUTs
     """
@@ -378,7 +372,7 @@ def jsonrpc_client_only(transport_manager, request):
 
     Specification Reference: A2A v0.3.0 §3.2.1 - JSON-RPC 2.0 Transport
     """
-    from tck.transport.base_client import TransportProtocol
+    from a2a.types import TransportProtocol
 
     try:
         client = transport_manager.get_transport_client(TransportProtocol.jsonrpc)
@@ -402,10 +396,10 @@ def grpc_client_only(transport_manager, request):
 
     Specification Reference: A2A v0.3.0 §3.2.2 - gRPC Transport
     """
-    from tck.transport.base_client import TransportProtocol
+    from a2a.types import TransportProtocol
 
     try:
-        client = transport_manager.get_transport_client(TransportProtocol.GRPC)
+        client = transport_manager.get_transport_client(TransportProtocol.grpc)
         if client is None:
             pytest.skip("gRPC transport not supported by SUT")
         return client
@@ -426,10 +420,10 @@ def rest_client_only(transport_manager, request):
 
     Specification Reference: A2A v0.3.0 §3.2.3 - HTTP+JSON/REST Transport
     """
-    from tck.transport.base_client import TransportProtocol
+    from a2a.types import TransportProtocol
 
     try:
-        client = transport_manager.get_transport_client(TransportProtocol.REST)
+        client = transport_manager.get_transport_client(TransportProtocol.http_json)
         if client is None:
             pytest.skip("REST transport not supported by SUT")
         return client

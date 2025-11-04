@@ -17,10 +17,9 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 from dataclasses import dataclass
 import re
 
-from tck.transport.base_client import BaseTransportClient
-from tck.transport.jsonrpc_client import JSONRPCClient
-from tck.transport.grpc_client import GRPCClient
-from tck.transport.rest_client import RESTClient
+from a2a.client import Client
+from a2a.client.base_client import BaseClient 
+from a2a.types import TransportProtocol
 
 
 @dataclass
@@ -127,7 +126,7 @@ class MethodMappingValidator:
         """Initialize the method mapping validator."""
         self.validation_results: List[Dict[str, Any]] = []
 
-    def validate_transport_method_naming(self, client: BaseTransportClient) -> Dict[str, Any]:
+    def validate_transport_method_naming(self, client: Client) -> Dict[str, Any]:
         """
         Validate that a transport client follows correct method naming conventions.
 
@@ -139,16 +138,20 @@ class MethodMappingValidator:
         """
         transport_type = self._get_transport_type(client)
 
-        if transport_type == "jsonrpc":
+        if transport_type == TransportProtocol.jsonrpc:
             return self._validate_jsonrpc_naming(client)
-        elif transport_type == "grpc":
+        elif transport_type == TransportProtocol.grpc:
             return self._validate_grpc_naming(client)
-        elif transport_type == "rest":
+        elif transport_type == TransportProtocol.http_json:
             return self._validate_rest_naming(client)
         else:
-            return {"transport": transport_type, "compliant": False, "errors": [f"Unknown transport type: {transport_type}"]}
+            return {
+                "transport": str(transport_type),
+                "compliant": False,
+                "errors": [f"Unknown transport type: {transport_type}"]
+            }
 
-    def validate_cross_transport_equivalence(self, clients: List[BaseTransportClient]) -> Dict[str, Any]:
+    def validate_cross_transport_equivalence(self, clients: List[Client]) -> Dict[str, Any]:
         """
         Validate functional equivalence across multiple transport implementations.
 
@@ -186,7 +189,7 @@ class MethodMappingValidator:
 
         return results
 
-    def validate_method_mapping_table_compliance(self, client: BaseTransportClient) -> Dict[str, Any]:
+    def validate_method_mapping_table_compliance(self, client: Client) -> Dict[str, Any]:
         """
         Validate that client implements methods according to the mapping table.
 
@@ -236,18 +239,21 @@ class MethodMappingValidator:
 
         return results
 
-    def _get_transport_type(self, client: BaseTransportClient) -> str:
+    def _get_transport_type(self, client: BaseClient) -> TransportProtocol:
         """Determine the transport type of a client."""
-        if isinstance(client, JSONRPCClient):
-            return "jsonrpc"
-        elif isinstance(client, GRPCClient):
-            return "grpc"
-        elif isinstance(client, RESTClient):
-            return "rest"
-        else:
-            return "unknown"
+        # Check transport type from client's internal transport
+        if hasattr(client, '_transport') and client._transport:
+            transport = client._transport
+            transport_class_name = transport.__class__.__name__
+            if 'JsonRpc' in transport_class_name:
+                return TransportProtocol.jsonrpc
+            elif 'Grpc' in transport_class_name:
+                return TransportProtocol.grpc
+            elif 'Rest' in transport_class_name:
+                return TransportProtocol.http_json
+        raise ValueError(f"Unknown transport type for client {type(client)}")
 
-    def _validate_jsonrpc_naming(self, client: JSONRPCClient) -> Dict[str, Any]:
+    def _validate_jsonrpc_naming(self, client: Client) -> Dict[str, Any]:
         """
         Validate JSON-RPC method naming conventions (§3.5.1).
 
@@ -273,7 +279,7 @@ class MethodMappingValidator:
 
         return results
 
-    def _validate_grpc_naming(self, client: GRPCClient) -> Dict[str, Any]:
+    def _validate_grpc_naming(self, client: Client) -> Dict[str, Any]:
         """
         Validate gRPC method naming conventions (§3.5.2).
 
@@ -299,7 +305,7 @@ class MethodMappingValidator:
 
         return results
 
-    def _validate_rest_naming(self, client: RESTClient) -> Dict[str, Any]:
+    def _validate_rest_naming(self, client: Client) -> Dict[str, Any]:
         """
         Validate REST endpoint naming conventions (§3.5.3).
 
@@ -345,18 +351,18 @@ class MethodMappingValidator:
         pattern = r"^/v1/[a-z]+(/\{[a-zA-Z]+\}|:[a-z]+)?$"
         return bool(re.match(pattern, endpoint))
 
-    def _get_available_jsonrpc_methods(self, client: JSONRPCClient) -> List[str]:
+    def _get_available_jsonrpc_methods(self, client: Client) -> List[str]:
         """Get list of available JSON-RPC methods."""
         # This would need to be implemented based on how the client exposes methods
         # For now, return the standard A2A methods
         return [mapping.jsonrpc_method for mapping in self.CORE_METHOD_MAPPINGS]
 
-    def _get_available_grpc_methods(self, client: GRPCClient) -> List[str]:
+    def _get_available_grpc_methods(self, client: Client) -> List[str]:
         """Get list of available gRPC methods."""
         # This would need to be implemented based on how the client exposes methods
         return [mapping.grpc_method for mapping in self.CORE_METHOD_MAPPINGS]
 
-    def _get_available_rest_endpoints(self, client: RESTClient) -> List[str]:
+    def _get_available_rest_endpoints(self, client: Client) -> List[str]:
         """Get list of available REST endpoints."""
         # Extract URL patterns from REST mappings
         endpoints = []
@@ -367,7 +373,7 @@ class MethodMappingValidator:
                 endpoints.append(parts[1])
         return endpoints
 
-    def _test_method_availability(self, client: BaseTransportClient, mapping: MethodMapping, transport_type: str) -> bool:
+    def _test_method_availability(self, client: Client, mapping: MethodMapping, transport_type: str) -> bool:
         """Test if a method is available on the client."""
         try:
             if transport_type == "jsonrpc":
@@ -410,7 +416,7 @@ class MethodMappingValidator:
             return "unknown"
 
     def _test_method_equivalence(
-        self, clients: List[BaseTransportClient], method_description: str, test_params: Any
+        self, clients: List[Client], method_description: str, test_params: Any
     ) -> Dict[str, Any]:
         """Test functional equivalence of a method across transports."""
         results = {"equivalent": True, "responses": {}, "differences": []}
@@ -424,7 +430,7 @@ class MethodMappingValidator:
         return results
 
 
-def validate_method_mapping_compliance(client: BaseTransportClient) -> Dict[str, Any]:
+def validate_method_mapping_compliance(client: Client) -> Dict[str, Any]:
     """
     Convenience function to validate method mapping compliance for a single client.
 
@@ -447,7 +453,7 @@ def validate_method_mapping_compliance(client: BaseTransportClient) -> Dict[str,
     return results
 
 
-def validate_cross_transport_equivalence(clients: List[BaseTransportClient]) -> Dict[str, Any]:
+def validate_cross_transport_equivalence(clients: List[Client]) -> Dict[str, Any]:
     """
     Convenience function to validate functional equivalence across multiple transports.
 

@@ -11,10 +11,13 @@ Specification Reference: A2A Protocol v0.3.0 §3.4 - Transport Compliance and In
 import logging
 from typing import Any, Dict, List, Optional, Set, Union
 
+import httpx
 import requests
 
 import asyncio
 from a2a.types import AgentCard, TransportProtocol
+from a2a.client import ClientFactory, ClientConfig, Client
+from a2a.client.base_client import BaseClient
 from tck.agent_card_utils import (
     fetch_agent_card,
     get_supported_transports,
@@ -22,7 +25,6 @@ from tck.agent_card_utils import (
     get_transport_urls,
     validate_transport_consistency,
 )
-from tck.transport.base_client import BaseTransportClient
 from tck import config as tck_config
 
 logger = logging.getLogger(__name__)
@@ -83,8 +85,10 @@ class TransportManager:
         self._agent_card: Optional[AgentCard] = None
         self._supported_transports: List[TransportProtocol] = []
         self._transport_endpoints: Dict[TransportProtocol, str] = {}
-        self._client_cache: Dict[TransportProtocol, BaseTransportClient] = {}
+        self._client_cache: Dict[TransportProtocol, Client] = {}
         self._discovery_completed = False
+        self._httpx_client: Optional[httpx.AsyncClient] = None
+        self._grpc_channel_factory = None  # Will be set if gRPC is needed
 
         logger.info(f"TransportManager initialized for {sut_base_url} with strategy: {selection_strategy}")
 
@@ -199,7 +203,7 @@ class TransportManager:
 
         return transport_type in self._supported_transports
 
-    def get_transport_client(self, transport_type: Optional[TransportProtocol] = None) -> BaseTransportClient:
+    def get_transport_client(self, transport_type: Optional[TransportProtocol] = None) -> BaseClient:
         """
         Get a transport client for the specified transport type.
 
@@ -207,7 +211,7 @@ class TransportManager:
             transport_type: Specific transport type, or None to use selection strategy
 
         Returns:
-            Configured transport client instance
+            Configured transport client instance (SDK BaseClient)
 
         Raises:
             TransportManagerError: If transport is not supported or client creation fails
@@ -237,14 +241,14 @@ class TransportManager:
 
         return client
 
-    def get_all_transport_clients(self) -> Dict[TransportProtocol, BaseTransportClient]:
+    def get_all_transport_clients(self) -> Dict[TransportProtocol, Client]:
         """
         Get transport clients for all supported transports.
 
         Useful for multi-transport equivalence testing.
 
         Returns:
-            Dictionary mapping TransportProtocol to client instances
+            Dictionary mapping TransportProtocol to client instances (SDK BaseClient)
 
         Raises:
             TransportManagerError: If any client creation fails
@@ -253,7 +257,7 @@ class TransportManager:
             if not self.discover_transports():
                 raise TransportManagerError("Cannot get clients: transport discovery failed")
 
-        clients: Dict[TransportProtocol, BaseTransportClient] = {}
+        clients: Dict[TransportProtocol, Client] = {}
 
         for transport_type in self._supported_transports:
             try:
@@ -340,15 +344,15 @@ class TransportManager:
             # Default: return first supported transport
             return self._supported_transports[0]
 
-    def _create_transport_client(self, transport_type: TransportProtocol) -> BaseTransportClient:
+    def _create_transport_client(self, transport_type: TransportProtocol) -> BaseClient:
         """
-        Create a transport client for the specified transport type.
+        Create a transport client using SDK's ClientFactory.
 
         Args:
             transport_type: Transport type to create client for
 
         Returns:
-            Configured transport client instance
+            Configured client instance (SDK BaseClient with appropriate transport)
 
         Raises:
             TransportManagerError: If client creation fails
@@ -362,24 +366,53 @@ class TransportManager:
         endpoint = self._transport_endpoints[transport_type]
 
         try:
-            # Import transport clients dynamically to avoid circular imports
-            if transport_type == TransportProtocol.jsonrpc:
-                from tck.transport.jsonrpc_client import JSONRPCClient
+            # Create AgentCard with specific transport preference
+            card = AgentCard(
+                name=self._agent_card.name,
+                description=self._agent_card.description,
+                version=self._agent_card.version,
+                url=endpoint,
+                capabilities=self._agent_card.capabilities,
+                skills=self._agent_card.skills,
+                default_input_modes=self._agent_card.default_input_modes,
+                default_output_modes=self._agent_card.default_output_modes,
+                preferred_transport=transport_type,
+                supports_authenticated_extended_card=self._agent_card.supports_authenticated_extended_card,
+                additional_interfaces=[]  # Don't include other transports
+            )
 
-                return JSONRPCClient(self._agent_card, endpoint)
+            # Create ClientConfig for this transport
+            config_params = {
+                'supported_transports': [transport_type],
+                'use_client_preference': False  # Use server preference
+            }
 
+            # Add httpx client for HTTP-based transports
+            if transport_type in [TransportProtocol.jsonrpc, TransportProtocol.http_json]:
+                if not self._httpx_client:
+                    self._httpx_client = httpx.AsyncClient(timeout=30.0)
+                config_params['httpx_client'] = self._httpx_client
+
+            # Add gRPC channel factory for gRPC transport
             elif transport_type == TransportProtocol.grpc:
-                from tck.transport.grpc_client import GRPCClient
+                if not self._grpc_channel_factory:
+                    try:
+                        import grpc.aio
+                        self._grpc_channel_factory = lambda url: grpc.aio.insecure_channel(url)
+                    except ImportError as e:
+                        raise TransportManagerError(
+                            "gRPC dependencies not installed. Install with: pip install a2a-sdk[grpc]"
+                        ) from e
+                config_params['grpc_channel_factory'] = self._grpc_channel_factory
 
-                return GRPCClient(self._agent_card, endpoint)
+            client_config = ClientConfig(**config_params)
 
-            elif transport_type == TransportProtocol.http_json:
-                from tck.transport.rest_client import RESTClient
+            # Use ClientFactory to create the client
+            factory = ClientFactory(client_config)
+            client = factory.create(card)
 
-                return RESTClient(self._agent_card, endpoint)
-
-            else:
-                raise TransportManagerError(f"Unknown transport type: {transport_type}")
+            logger.info(f"Created {transport_type.value} client using SDK ClientFactory")
+            return client
 
         except ImportError as e:
             raise TransportManagerError(f"Transport client not available for {transport_type.value}: {e}") from e
@@ -393,23 +426,41 @@ class TransportManager:
         self._client_cache.clear()
         logger.debug("Transport client cache cleared")
 
-    def close(self):
+    async def close_async(self):
         """
-        Close all clients and clean up resources.
+        Close all clients and clean up resources (async version).
         """
         for client in self._client_cache.values():
             if hasattr(client, "close"):
                 try:
-                    client.close()
+                    await client.close()
                 except Exception as e:
                     logger.warning(f"Error closing transport client {client}: {e}")
 
         self.clear_client_cache()
 
+        if self._httpx_client:
+            await self._httpx_client.aclose()
+            self._httpx_client = None
+
         if hasattr(self.session, "close"):
             self.session.close()
 
         logger.info("TransportManager closed")
+
+    def close(self):
+        """
+        Close all clients and clean up resources (sync version).
+        
+        Note: This is a synchronous wrapper. For async contexts, prefer close_async().
+        """
+        try:
+            asyncio.run(self.close_async())
+        except RuntimeError:
+            # If we're already in an event loop, just clear cache
+            self.clear_client_cache()
+            if hasattr(self.session, "close"):
+                self.session.close()
 
     def __enter__(self):
         """Context manager entry."""

@@ -1,5 +1,5 @@
 """
-Unit tests for BaseTransportClient abstract class.
+Unit tests for Client abstract class.
 
 Tests the base transport client interface and common functionality
 to ensure proper abstraction and error handling.
@@ -11,16 +11,16 @@ import pytest
 from abc import ABC
 from typing import Any, Dict, Optional
 
-from tck.transport.base_client import BaseTransportClient, TransportError, TransportType
+from a2a.client import Client, TransportError, TransportProtocol
 
 # Import the core marker
 pytestmark = pytest.mark.core
 
 
-class MockTransportClient(BaseTransportClient):
-    """Mock implementation of BaseTransportClient for testing."""
+class MockTransportClient(Client):
+    """Mock implementation of Client for testing."""
 
-    def __init__(self, base_url: str, transport_type: TransportType):
+    def __init__(self, base_url: str, transport_type: TransportProtocol):
         super().__init__(base_url, transport_type)
         self.method_calls = []
 
@@ -72,18 +72,18 @@ class MockTransportClient(BaseTransportClient):
         return self._record_call("get_authenticated_extended_card", extra_headers=extra_headers)
 
 
-class TestTransportType:
-    """Test TransportType enumeration."""
+class TestTransportProtocol:
+    """Test TransportProtocol enumeration."""
 
     def test_transport_type_values(self):
-        """Test that TransportType has correct values."""
-        assert TransportType.JSON_RPC.value == "jsonrpc"
-        assert TransportType.GRPC.value == "grpc"
-        assert TransportType.REST.value == "rest"
+        """Test that TransportProtocol has correct values."""
+        assert TransportProtocol.jsonrpc.value == "jsonrpc"
+        assert TransportProtocol.grpc.value == "grpc"
+        assert TransportProtocol.http_json.value == "rest"
 
     def test_transport_type_count(self):
         """Test that we have exactly 3 transport types."""
-        assert len(TransportType) == 3
+        assert len(TransportProtocol) == 3
 
 
 class TestTransportError:
@@ -91,37 +91,37 @@ class TestTransportError:
 
     def test_transport_error_basic(self):
         """Test basic TransportError creation."""
-        error = TransportError("Test error", TransportType.JSON_RPC)
+        error = TransportError("Test error", TransportProtocol.jsonrpc)
         assert str(error) == "[JSONRPC] Test error"
-        assert error.transport_type == TransportType.JSON_RPC
+        assert error.transport_type == TransportProtocol.jsonrpc
         assert error.original_error is None
 
     def test_transport_error_with_original(self):
         """Test TransportError with original exception."""
         original = ValueError("Original error")
-        error = TransportError("Test error", TransportType.GRPC, original_error=original)
+        error = TransportError("Test error", TransportProtocol.grpc, original_error=original)
         assert "[GRPC] Test error (caused by: Original error)" in str(error)
         assert error.original_error == original
 
 
-class TestBaseTransportClient:
-    """Test BaseTransportClient abstract class."""
+class TestClient:
+    """Test Client abstract class."""
 
     def test_abstract_class_cannot_instantiate(self):
-        """Test that BaseTransportClient cannot be instantiated directly."""
+        """Test that Client cannot be instantiated directly."""
         with pytest.raises(TypeError):
-            BaseTransportClient("http://example.com", TransportType.JSON_RPC)
+            Client("http://example.com", TransportProtocol.jsonrpc)
 
     def test_mock_client_initialization(self):
         """Test mock client initialization."""
-        client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
         assert client.base_url == "http://example.com"
-        assert client.transport_type == TransportType.JSON_RPC
+        assert client.transport_type == TransportProtocol.jsonrpc
         assert hasattr(client, "_logger")
 
     def test_supports_method_core_methods(self):
         """Test that all core methods are supported."""
-        client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
 
         core_methods = [
             "send_message",
@@ -141,9 +141,9 @@ class TestBaseTransportClient:
 
     def test_supports_method_list_tasks_transport_specific(self):
         """Test that list_tasks support depends on transport type."""
-        jsonrpc_client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
-        grpc_client = MockTransportClient("http://example.com", TransportType.GRPC)
-        rest_client = MockTransportClient("http://example.com", TransportType.REST)
+        jsonrpc_client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
+        grpc_client = MockTransportClient("http://example.com", TransportProtocol.grpc)
+        rest_client = MockTransportClient("http://example.com", TransportProtocol.http_json)
 
         assert not jsonrpc_client.supports_method("list_tasks")
         assert grpc_client.supports_method("list_tasks")
@@ -151,12 +151,12 @@ class TestBaseTransportClient:
 
     def test_supports_method_unknown_method(self):
         """Test that unknown methods are not supported."""
-        client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
         assert not client.supports_method("unknown_method")
 
     def test_list_tasks_not_implemented_for_jsonrpc(self):
         """Test that list_tasks raises NotImplementedError for JSON-RPC."""
-        client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
 
         with pytest.raises(NotImplementedError) as exc_info:
             client.list_tasks()
@@ -164,7 +164,7 @@ class TestBaseTransportClient:
 
     def test_get_transport_info(self):
         """Test transport info generation."""
-        client = MockTransportClient("http://example.com", TransportType.GRPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.grpc)
         info = client.get_transport_info()
 
         assert info["transport_type"] == "grpc"
@@ -175,7 +175,7 @@ class TestBaseTransportClient:
 
     def test_str_representation(self):
         """Test string representation of transport client."""
-        client = MockTransportClient("http://example.com", TransportType.REST)
+        client = MockTransportClient("http://example.com", TransportProtocol.http_json)
         str_repr = str(client)
         assert "MockTransportClient" in str_repr
         assert "rest" in str_repr
@@ -183,15 +183,15 @@ class TestBaseTransportClient:
 
     def test_repr_representation(self):
         """Test repr representation of transport client."""
-        client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
         repr_str = repr(client)
         assert "MockTransportClient" in repr_str
         assert "base_url='http://example.com'" in repr_str
-        assert "TransportType.JSON_RPC" in repr_str
+        assert "TransportProtocol.jsonrpc" in repr_str
 
     def test_method_call_recording(self):
         """Test that mock client records method calls properly."""
-        client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
 
         # Test a method call
         message = {"kind": "message", "messageId": "test", "role": "user", "parts": []}
@@ -206,10 +206,10 @@ class TestBaseTransportClient:
 
     def test_all_abstract_methods_implemented(self):
         """Test that mock client implements all abstract methods."""
-        client = MockTransportClient("http://example.com", TransportType.JSON_RPC)
+        client = MockTransportClient("http://example.com", TransportProtocol.jsonrpc)
 
         # Verify no abstract methods remain unimplemented
-        abstract_methods = BaseTransportClient.__abstractmethods__
+        abstract_methods = Client.__abstractmethods__
         for method_name in abstract_methods:
             assert hasattr(client, method_name)
             assert callable(getattr(client, method_name))
